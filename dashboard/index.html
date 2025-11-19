@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baba Radio - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .feature-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .feature-card li {
+            padding: 8px 0;
+            color: #555;
+        }
+        
+        .feature-card li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .cta-section {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .cta-section h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            margin: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Baba Radio</h1>
+            <p>Dashboard Operativo v4.0</p>
+            <p>Desarrollado por djluisalegre para Solome</p>
+        </div>
+        
+        <div class="content">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>18+</h3>
+                    <p>Comandos Activos</p>
+                </div>
+                <div class="stat-card">
+                    <h3>🟢</h3>
+                    <p>Estado: Online</p>
+                </div>
+                <div class="stat-card">
+                    <h3>v4.0.8</h3>
+                    <p>Lavalink Version</p>
+                </div>
+                <div class="stat-card">
+                    <h3>168+</h3>
+                    <p>Comandos Planeados</p>
+                </div>
+            </div>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <h3>🎵 Música Avanzada</h3>
+                    <ul>
+                        <li>YouTube, Spotify, SoundCloud</li>
+                        <li>Enlaces MP3 directos</li>
+                        <li>Radio de múltiples fuentes</li>
+                        <li>Lavalink v4 con plugins</li>
+                        <li>Letras en tiempo real</li>
+                        <li>Cola de reproducción</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🛡️ Moderación Completa</h3>
+                    <ul>
+                        <li>Kick, Ban, Timeout</li>
+                        <li>Sistema de advertencias</li>
+                        <li>Bloqueo de canales</li>
+                        <li>Limpieza de mensajes</li>
+                        <li>Auto-moderación (próximamente)</li>
+                        <li>Logs completos (próximamente)</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎫 Sistema de Tickets</h3>
+                    <ul>
+                        <li>Creación automática</li>
+                        <li>Paneles personalizables</li>
+                        <li>Transcripciones</li>
+                        <li>Gestión de usuarios</li>
+                        <li>Cierre automático</li>
+                        <li>Soporte 24/7</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>💎 Premium</h3>
+                    <ul>
+                        <li>Funciones exclusivas</li>
+                        <li>Sin límites</li>
+                        <li>Soporte prioritario</li>
+                        <li>Dashboard completo</li>
+                        <li>API de acceso</li>
+                        <li>Desde $4.99/mes</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="cta-section">
+                <h2>¿Listo para empezar?</h2>
+                <p style="margin-bottom: 30px;">Invita a Baba Radio a tu servidor y disfruta de todas las funciones</p>
+                <a href="#" class="btn">Invitar Bot</a>
+                <a href="#" class="btn">Ver Premium</a>
+                <a href="#" class="btn">Documentación</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Baba Radio v4.0 - Desarrollado por djluisalegre</p>
+            <p>Powered by Lavalink v4.0.8 (TechByte & Yumi Team)</p>
+            <p>© 2025 Solome. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
