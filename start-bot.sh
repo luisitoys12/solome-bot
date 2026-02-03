@@ -23,8 +23,9 @@ pkill -f "node.*index.js" 2>/dev/null
 sleep 2
 
 # Start the bot in background
-echo "🚀 Starting bot in background..."
-nohup npm start > bot.log 2>&1 &
+PORT=${PORT:-3000}
+echo "🚀 Starting bot + dashboard on port ${PORT}..."
+nohup env PORT=${PORT} npm start > bot.log 2>&1 &
 BOT_PID=$!
 
 sleep 3
