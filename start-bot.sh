@@ -6,11 +6,9 @@ echo "🎵 Starting Solome Bot..."
 echo "================================"
 echo ""
 
-# Check if .env exists
+# Check if .env exists (optional if secrets are injected as env vars)
 if [ ! -f .env ]; then
-    echo "❌ Error: .env file not found!"
-    echo "Please copy .env.example to .env and configure it."
-    exit 1
+    echo "ℹ️ .env file not found, continuing with environment variables."
 fi
 
 # Check if node_modules exists
@@ -24,7 +22,6 @@ echo "🔄 Stopping existing bot..."
 pkill -f "node.*index.js" 2>/dev/null || true
 sleep 2
 
-# Start the bot in background, local-only by default
 PORT=${PORT:-3000}
 HOST=${HOST:-127.0.0.1}
 
@@ -34,7 +31,6 @@ BOT_PID=$!
 
 sleep 3
 
-# Check if bot started successfully
 if ps -p "$BOT_PID" > /dev/null; then
     echo "✅ Bot started successfully! (PID: $BOT_PID)"
     echo "🌐 Dashboard: http://${HOST}:${PORT}"

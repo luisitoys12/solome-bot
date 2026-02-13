@@ -23,6 +23,22 @@ function isAuthorized(req, accessToken) {
   return incomingToken === accessToken
 }
 
+function serveDashboard(res) {
+  fs.readFile(DASHBOARD_PATH, 'utf8', (err, html) => {
+    if (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end('Error loading dashboard')
+      return
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store'
+    })
+    res.end(html)
+  })
+}
+
 function startWebServer() {
   const port = parsePort(process.env.PORT)
   const host = process.env.HOST || '127.0.0.1'
@@ -35,25 +51,19 @@ function startWebServer() {
       return
     }
 
-    if (req.url && req.url !== '/' && req.url !== '/index.html') {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
-      res.end('Not Found')
+    if (req.url === '/' || req.url === '/index.html') {
+      serveDashboard(res)
       return
     }
 
-    fs.readFile(DASHBOARD_PATH, 'utf8', (err, html) => {
-      if (err) {
-        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
-        res.end('Error loading dashboard')
-        return
-      }
+    if (req.url === '/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({ status: 'ok' }))
+      return
+    }
 
-      res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-store'
-      })
-      res.end(html)
-    })
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('Not Found')
   })
 
   server.listen(port, host, () => {
