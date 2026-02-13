@@ -1,6 +1,8 @@
 #!/bin/bash
 
-echo "🎵 Starting Baba Radio Bot..."
+set -euo pipefail
+
+echo "🎵 Starting Solome Bot..."
 echo "================================"
 echo ""
 
@@ -19,19 +21,23 @@ fi
 
 # Kill existing bot process
 echo "🔄 Stopping existing bot..."
-pkill -f "node.*index.js" 2>/dev/null
+pkill -f "node.*index.js" 2>/dev/null || true
 sleep 2
 
-# Start the bot in background
-echo "🚀 Starting bot in background..."
-nohup npm start > bot.log 2>&1 &
+# Start the bot in background, local-only by default
+PORT=${PORT:-3000}
+HOST=${HOST:-127.0.0.1}
+
+echo "🚀 Starting bot + dashboard on ${HOST}:${PORT}..."
+nohup env PORT="${PORT}" HOST="${HOST}" npm start > bot.log 2>&1 &
 BOT_PID=$!
 
 sleep 3
 
 # Check if bot started successfully
-if ps -p $BOT_PID > /dev/null; then
+if ps -p "$BOT_PID" > /dev/null; then
     echo "✅ Bot started successfully! (PID: $BOT_PID)"
+    echo "🌐 Dashboard: http://${HOST}:${PORT}"
     echo "📋 View logs: tail -f bot.log"
     echo "🛑 Stop bot: pkill -f 'node.*index.js'"
 else
