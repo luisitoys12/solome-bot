@@ -25,9 +25,23 @@ const categories = {
   FUN: {
     name: '🎮 Diversión',
     emoji: '🎮',
-    description: 'Juegos interactivos y entretenimiento',
+    description: 'Juegos interactivos y entretenimiento para toda la familia',
     color: 0xf1c40f,
-    commands: ['8ball', 'tictactoe', 'connect4', 'coinflip', 'dice', 'meme', 'gif']
+    commands: ['8ball', 'tictactoe', 'connect4', 'coinflip', 'dice', 'meme', 'gif', 'duelo', 'entretenimiento', 'loteria']
+  },
+  STREAMING: {
+    name: '📺 Streaming',
+    emoji: '📺',
+    description: 'Herramientas para creadores de contenido',
+    color: 0x9146ff,
+    commands: ['stream']
+  },
+  GAMER: {
+    name: '🎮 Gamer',
+    emoji: '🎮',
+    description: 'Perfiles y comunidad gamer',
+    color: 0x00ff88,
+    commands: ['perfil-gamer', 'alter-ego']
   },
   UTILITY: {
     name: '🔧 Utilidad',
@@ -48,7 +62,7 @@ const categories = {
     emoji: '👨‍💻',
     description: 'Comandos exclusivos para desarrolladores',
     color: 0x2c3e50,
-    commands: ['eval', 'credits']
+    commands: ['eval', 'credits', 'debug']
   }
 }
 
@@ -114,7 +128,9 @@ function getCategoryEmbed(categoryKey, client) {
     MUSIC: '💡 **Tip:** Únete a un canal de voz y usa `/play <canción>` para empezar',
     RADIO: '💡 **Tip:** Usa `/radio <nombre>` para buscar entre 200,000+ estaciones',
     MODERATION: '💡 **Tip:** Requiere permisos de moderador para usar estos comandos',
-    FUN: '💡 **Tip:** Menciona a un amigo para jugar juntos',
+    FUN: '💡 **Tip:** Usa `/entretenimiento` para pintacaritas, ofertas Amazon, series populares y más',
+    STREAMING: '💡 **Tip:** Configura tus anuncios con `/stream configurar` y anuncia con `/stream live`',
+    GAMER: '💡 **Tip:** Crea tu perfil con `/perfil-gamer crear` y encuentra compañeros de juego',
     UTILITY: '💡 **Tip:** Usa `/help` para ver todas las categorías',
     ADMIN: '💡 **Tip:** Requiere permisos de administrador',
     DEVELOPER: '💡 **Tip:** Solo el dueño del bot puede usar estos comandos'
