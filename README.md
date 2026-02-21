@@ -15,7 +15,11 @@ Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 
 ## ✨ Novedades 4.0
 
-- **Script unificado `start.sh`** para iniciar todo el sistema con un solo comando.
+- **Script unificado `start.sh`** que instala TODO automáticamente:
+  - Instala Docker si no lo tienes
+  - Configura Lavalink con plugins (YouTube, LavaSrc, SponsorBlock)
+  - Inicia bot + dashboard + Lavalink
+  - Todo en un solo comando
 - **Nueva configuración Lavalink v4** con múltiples nodos públicos y un nodo local en Docker.
 - **Comando `/radio` mejorado** usando streams de varias fuentes.
 - **Nuevo módulo de Lotería** (`/loteria jugar | info | sortear`).
@@ -43,18 +47,18 @@ Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 
 ## 🧩 Requisitos
 
-- Node.js 18 o superior.
-- Docker y Docker Compose (opcional, para Lavalink local).
-- Token de bot de Discord.
+- **Node.js 18 o superior** (requerido)
+- **Docker** (se instala automáticamente con el script)
+- **Token de bot de Discord** (obténlo en [Discord Developer Portal](https://discord.com/developers/applications))
 - (Opcional) API propia o pública para IA (texto e imagen) accesible vía HTTP.
 
 ---
 
-## 🚀 Instalación rápida (Recomendado)
+## 🚀 Instalación ULTRA rápida (Recomendado)
 
-### Usa el script unificado `start.sh`
+### ⚡ Solo 4 comandos y listo
 
-Este script hace todo automáticamente: instala dependencias, inicia Lavalink en Docker, registra comandos y arranca el bot.
+El script `start.sh` hace TODO por ti:
 
 ```bash
 # 1. Clona el repo
@@ -63,19 +67,49 @@ cd solome-bot
 
 # 2. Configura tu .env
 cp .env.example .env
-nano .env  # O usa tu editor favorito
+nano .env  # Añade tu DISCORD_TOKEN y CLIENT_ID
 
-# 3. Da permisos al script
+# 3. Da permisos y ejecuta
 chmod +x start.sh
-
-# 4. Inicia todo el sistema
 ./start.sh
 ```
 
-### Modos disponibles del script
+### ✨ Lo que hace el script automáticamente:
+
+1. ✅ Verifica requisitos (Node.js, .env)
+2. ✅ **Instala Docker si no lo tienes** (en Linux)
+3. ✅ Instala dependencias del bot (`npm install`)
+4. ✅ Crea `docker-compose.yml` si no existe
+5. ✅ Crea `lavalink-server/application.yml` con plugins:
+   - YouTube Plugin v1.5.2
+   - LavaSrc Plugin v4.1.1 (Spotify, Apple Music, Deezer)
+   - SponsorBlock Plugin v3.0.1
+6. ✅ Inicia Lavalink en Docker
+7. ✅ Inicia el bot + dashboard
+8. ✅ Muestra logs e información útil
+
+### 🎯 Resultado esperado
+
+```
+✅ ¡Solome Bot 4.0 está listo!
+
+📊 Información:
+   Bot: Conectado a Discord
+   Dashboard: http://localhost:3000
+   Lavalink: localhost:2333 (local) + nodos públicos
+   
+   Logs: tail -f app.log
+   Detener: pkill -f 'node.*index.js'
+```
+
+---
+
+## 🔧 Modos de inicio
+
+El script `start.sh` soporta diferentes modos:
 
 ```bash
-# Inicia todo (bot + dashboard + Lavalink)
+# Modo completo (bot + dashboard + Lavalink)
 ./start.sh
 
 # Solo el bot de Discord
@@ -85,17 +119,47 @@ chmod +x start.sh
 ./start.sh dashboard
 ```
 
-El script verifica automáticamente:
-- ✅ Archivo `.env` configurado
-- ✅ Node.js instalado
-- ✅ Docker disponible (opcional)
-- ✅ Dependencias instaladas
-- ✅ Lavalink corriendo en Docker
-- ✅ Bot conectado a Discord
+---
+
+## 🔥 Mantener el bot 24/7 con PM2
+
+DESPUÉS de ejecutar `./start.sh` exitosamente:
+
+```bash
+# 1. Detener el proceso actual
+pkill -f 'node.*index.js'
+
+# 2. Instalar PM2 (si no lo tienes)
+npm install -g pm2
+
+# 3. Iniciar con PM2
+pm2 start "npm start" --name solome-bot
+
+# 4. Guardar configuración
+pm2 save
+
+# 5. Configurar inicio automático
+pm2 startup
+# Copia y ejecuta el comando que te muestra PM2
+
+# 6. Verificar estado
+pm2 status
+pm2 logs solome-bot
+```
+
+### Comandos útiles de PM2
+
+```bash
+pm2 logs solome-bot          # Ver logs en tiempo real
+pm2 restart solome-bot       # Reiniciar el bot
+pm2 stop solome-bot          # Detener el bot
+pm2 monit                    # Monitor de recursos
+pm2 delete solome-bot        # Eliminar del PM2
+```
 
 ---
 
-## 🛠️ Instalación manual (Avanzada)
+## 🛠️ Instalación manual (Solo si el script falla)
 
 ### 1. Clonar el repositorio
 
@@ -106,13 +170,12 @@ cd solome-bot
 
 ### 2. Configurar variables de entorno
 
-Copia el archivo de ejemplo:
-
 ```bash
 cp .env.example .env
+nano .env
 ```
 
-Edita `.env` y rellena:
+Edita y rellena:
 
 ```env
 DISCORD_TOKEN=TU_TOKEN_AQUI
@@ -121,58 +184,70 @@ GUILD_ID=ALGUN_GUILD_PARA_REGISTRAR_COMANDOS
 NODE_ENV=production
 ```
 
-### 3. Instalar dependencias del bot
+### 3. Instalar Docker manualmente
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+```
+
+### 4. Instalar dependencias
 
 ```bash
 npm install
 ```
 
-> El proyecto usa **discord.js v14**, `@discordjs/voice`, `axios` y otros módulos ya definidos en `package.json`.
-
-### 4. Registrar comandos
-
-```bash
-npm run register
-```
-
-### 5. Iniciar el bot
-
-```bash
-npm start
-```
-
----
-
-## 📦 Lavalink v4 en Docker
-
-Solome Bot está preparado para trabajar con:
-
-- Un **Lavalink local** en Docker.
-- Varios **nodos públicos** definidos en `lavalink.config.js`.
-
-### Levantar Lavalink local manualmente
-
-El archivo `docker-compose.yml` ya está incluido en el proyecto.
+### 5. Iniciar Lavalink
 
 ```bash
 docker compose up -d lavalink
 ```
 
-El bot usará este nodo local más los nodos públicos definidos en `lavalink.config.js` (ajieblogs, DivaHost, RudraCloud, etc.).
+### 6. Registrar comandos e iniciar
 
-Asegúrate de que `lavalink-server/application.yml` contiene la contraseña `babaradio2025` y los plugins que quieras cargar.
+```bash
+npm run register
+npm start
+```
 
 ---
 
-## 🔧 Configuración de Lavalink en el bot
+## 🎵 Lavalink: Plugins incluidos
 
-El archivo `lavalink.config.js` ya viene con varios nodos:
+El script `start.sh` configura automáticamente estos plugins:
 
-- `baba-local` (localhost:2333).
-- `ajie-v4-ssl` (nodo público principal, SSL).
-- Otros nodos de backup (DivaHost, RudraCloud, Inzeworld, Nextgen, LavalinkHub).
+### YouTube Plugin v1.5.2
+- Búsqueda y reproducción de YouTube
+- Soporte para playlists
+- IDs directos de video
 
-Si necesitas cambiar contraseñas o hosts, edita `lavalink.config.js`.
+### LavaSrc Plugin v4.1.1
+- 🎵 Spotify (requiere credenciales)
+- 🍎 Apple Music
+- 🎶 Deezer
+- Búsqueda por ISRC
+
+### SponsorBlock Plugin v3.0.1
+- Salta automáticamente:
+  - Sponsors
+  - Auto-promociones
+  - Intro/Outro
+
+### Configuración de Spotify (opcional)
+
+Edita `lavalink-server/application.yml`:
+
+```yaml
+plugins:
+  lavasrc:
+    spotify:
+      clientId: "tu_client_id"
+      clientSecret: "tu_client_secret"
+      countryCode: "MX"
+```
+
+Obtén credenciales en: https://developer.spotify.com/dashboard
 
 ---
 
@@ -319,83 +394,6 @@ Juego rápido de piedra, papel o tijeras con botones interactivos:
 
 ---
 
-## 🔥 Mantener el bot 24/7
-
-### Opción 1: Usando PM2 (Recomendado)
-
-```bash
-# Instalar PM2
-npm install -g pm2
-
-# Iniciar el bot
-pm2 start "npm start" --name solome-bot
-
-# Guardar configuración
-pm2 save
-
-# Configurar inicio automático
-pm2 startup
-
-# Ver logs en tiempo real
-pm2 logs solome-bot
-
-# Reiniciar el bot
-pm2 restart solome-bot
-
-# Detener el bot
-pm2 stop solome-bot
-```
-
-### Opción 2: Usando el script start.sh
-
-Si usas el script `start.sh`, el bot correrá en segundo plano:
-
-```bash
-./start.sh
-
-# Ver logs
-tail -f app.log
-
-# Detener
-pkill -f 'node.*index.js'
-```
-
----
-
-## 🌟 Funciones destacadas
-
-### Radio multicanalera
-- Búsqueda en iHeartRadio, TuneIn y MyTuner.
-- Selección interactiva con menú desplegable.
-- Compatible con Lavalink v4.
-
-### Lotería del servidor
-- Sistema de boletos con bote acumulable.
-- Sorteo automático o manual por admins.
-- Integración futura con economía del bot.
-
-### IA Generativa
-- Créditos diarios para uso justo.
-- Imágenes y texto generados por IA.
-- Sistema extensible para video y más medios.
-
-### Asistente conversacional
-- Chat privado en threads.
-- Control de acceso con códigos beta.
-- Límite de mensajes por sesión.
-
-### Sistema para Streamers
-- Anuncios automáticos personalizados.
-- Soporte para múltiples plataformas.
-- Menciones de roles y embeds atractivos.
-
-### Juegos Interactivos
-- Botones y componentes modernos de Discord.
-- Múltiples modos (PvP, vs Bot).
-- Sistema extensible para más juegos.
-
----
-
 ## 📝 Permisos especiales
 
 ### Dueño del bot
@@ -413,9 +411,67 @@ const OWNER_IDS = [
 ]
 ```
 
+3. Reinicia el bot:
+
+```bash
+pm2 restart solome-bot
+# O si usas el script:
+pkill -f 'node.*index.js' && ./start.sh
+```
+
 ### Administradores de servidor
 
 Comandos como `/stream configurar`, `/loteria sortear` y `/ia recargar` requieren permisos de administrador del servidor.
+
+---
+
+## 🐛 Solución de problemas
+
+### El bot no inicia
+
+```bash
+# Ver logs
+tail -f app.log
+
+# O con PM2
+pm2 logs solome-bot --err
+```
+
+### Lavalink no conecta
+
+```bash
+# Ver logs de Lavalink
+docker logs lavalink-babaradio
+
+# Reiniciar Lavalink
+docker restart lavalink-babaradio
+
+# Verificar que esté corriendo
+docker ps | grep lavalink
+```
+
+### Docker requiere sudo
+
+DESPUÉS de la instalación de Docker:
+
+```bash
+# Cerrar sesión y volver a conectar
+exit
+# Reconecta por SSH
+
+# Verificar que funcione sin sudo
+docker ps
+```
+
+### Comandos no aparecen en Discord
+
+```bash
+# Registrar comandos manualmente
+npm run register
+
+# Reiniciar el bot
+pm2 restart solome-bot
+```
 
 ---
 
