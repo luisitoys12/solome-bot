@@ -1,29 +1,16 @@
 // src/utils/iaCredits.js
-// AI Credits Management System for Solome Bot 4.0
-// Handles daily credits, usage tracking, and admin recharges
-
 const { load, save } = require('./database.js')
 
 const DAILY_FREE_CREDITS = 15
 
-/**
- * Gets the credits data object
- */
 function getData () {
   return load('iaCredits', {})
 }
 
-/**
- * Saves the credits data object
- */
 function saveData (data) {
   save('iaCredits', data)
 }
 
-/**
- * Resets user credits if it's a new day
- * @param {Object} user - User credits object
- */
 function resetIfNeeded (user) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -36,9 +23,7 @@ function resetIfNeeded (user) {
 }
 
 /**
- * Gets current credits for a user
- * @param {string} userId - Discord user ID
- * @returns {number} Available credits
+ * Obtiene créditos actuales del usuario
  */
 function getCredits (userId) {
   const data = getData()
@@ -53,9 +38,7 @@ function getCredits (userId) {
 }
 
 /**
- * Attempts to use 1 credit
- * @param {string} userId - Discord user ID
- * @returns {boolean} true if credit was consumed, false if no credits available
+ * Consume 1 crédito (devuelve true si pudo, false si no)
  */
 function useCredit (userId) {
   const data = getData()
@@ -76,10 +59,7 @@ function useCredit (userId) {
 }
 
 /**
- * Adds credits to a user (admin function)
- * @param {string} userId - Discord user ID
- * @param {number} amount - Credits to add
- * @returns {number} New total credits
+ * Recarga créditos manualmente
  */
 function addCredits (userId, amount) {
   const data = getData()
