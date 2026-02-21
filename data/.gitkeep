@@ -1,0 +1,8 @@
+# Esta carpeta almacena datos del bot en formato JSON
+
+Archivos que se crean automáticamente:
+- iaCredits.json (créditos IA por usuario)
+- loteria.json (datos de lotería por servidor)
+- streams.json (configuración de anuncios de streams)
+- aiSessions.json (sesiones activas de chat)
+- betaCodes.json (códigos de acceso beta)
