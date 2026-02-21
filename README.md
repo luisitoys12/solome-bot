@@ -15,6 +15,7 @@ Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 
 ## ✨ Novedades 4.0
 
+- **Script unificado `start.sh`** para iniciar todo el sistema con un solo comando.
 - **Nueva configuración Lavalink v4** con múltiples nodos públicos y un nodo local en Docker.
 - **Comando `/radio` mejorado** usando streams de varias fuentes.
 - **Nuevo módulo de Lotería** (`/loteria jugar | info | sortear`).
@@ -43,13 +44,58 @@ Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 ## 🧩 Requisitos
 
 - Node.js 18 o superior.
-- Docker y Docker Compose (para Lavalink local).
+- Docker y Docker Compose (opcional, para Lavalink local).
 - Token de bot de Discord.
 - (Opcional) API propia o pública para IA (texto e imagen) accesible vía HTTP.
 
 ---
 
-## 🚀 Instalación
+## 🚀 Instalación rápida (Recomendado)
+
+### Usa el script unificado `start.sh`
+
+Este script hace todo automáticamente: instala dependencias, inicia Lavalink en Docker, registra comandos y arranca el bot.
+
+```bash
+# 1. Clona el repo
+git clone https://github.com/luisitoys12/solome-bot.git
+cd solome-bot
+
+# 2. Configura tu .env
+cp .env.example .env
+nano .env  # O usa tu editor favorito
+
+# 3. Da permisos al script
+chmod +x start.sh
+
+# 4. Inicia todo el sistema
+./start.sh
+```
+
+### Modos disponibles del script
+
+```bash
+# Inicia todo (bot + dashboard + Lavalink)
+./start.sh
+
+# Solo el bot de Discord
+./start.sh bot
+
+# Solo el dashboard web
+./start.sh dashboard
+```
+
+El script verifica automáticamente:
+- ✅ Archivo `.env` configurado
+- ✅ Node.js instalado
+- ✅ Docker disponible (opcional)
+- ✅ Dependencias instaladas
+- ✅ Lavalink corriendo en Docker
+- ✅ Bot conectado a Discord
+
+---
+
+## 🛠️ Instalación manual (Avanzada)
 
 ### 1. Clonar el repositorio
 
@@ -83,6 +129,18 @@ npm install
 
 > El proyecto usa **discord.js v14**, `@discordjs/voice`, `axios` y otros módulos ya definidos en `package.json`.
 
+### 4. Registrar comandos
+
+```bash
+npm run register
+```
+
+### 5. Iniciar el bot
+
+```bash
+npm start
+```
+
 ---
 
 ## 📦 Lavalink v4 en Docker
@@ -92,7 +150,7 @@ Solome Bot está preparado para trabajar con:
 - Un **Lavalink local** en Docker.
 - Varios **nodos públicos** definidos en `lavalink.config.js`.
 
-### 3.1. Levantar Lavalink local
+### Levantar Lavalink local manualmente
 
 El archivo `docker-compose.yml` ya está incluido en el proyecto.
 
@@ -261,40 +319,46 @@ Juego rápido de piedra, papel o tijeras con botones interactivos:
 
 ---
 
-## ▶️ Puesta en marcha rápida
+## 🔥 Mantener el bot 24/7
 
-1. Clona el repo y configura `.env`.
-2. Instala dependencias:
+### Opción 1: Usando PM2 (Recomendado)
 
-   ```bash
-   npm install
-   ```
+```bash
+# Instalar PM2
+npm install -g pm2
 
-3. Levanta Lavalink local en Docker:
+# Iniciar el bot
+pm2 start "npm start" --name solome-bot
 
-   ```bash
-   docker compose up -d lavalink
-   ```
+# Guardar configuración
+pm2 save
 
-4. Registra los comandos de aplicación:
+# Configurar inicio automático
+pm2 startup
 
-   ```bash
-   npm run register
-   ```
+# Ver logs en tiempo real
+pm2 logs solome-bot
 
-5. Inicia el bot:
+# Reiniciar el bot
+pm2 restart solome-bot
 
-   ```bash
-   npm start
-   ```
+# Detener el bot
+pm2 stop solome-bot
+```
 
-6. (Opcional) Ejecuta con PM2 para mantenerlo 24/7:
+### Opción 2: Usando el script start.sh
 
-   ```bash
-   pm2 start "npm start" --name solome-bot
-   pm2 save
-   pm2 startup
-   ```
+Si usas el script `start.sh`, el bot correrá en segundo plano:
+
+```bash
+./start.sh
+
+# Ver logs
+tail -f app.log
+
+# Detener
+pkill -f 'node.*index.js'
+```
 
 ---
 
