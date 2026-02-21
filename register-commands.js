@@ -42,6 +42,196 @@ const commands = [
     .setName('radioinfo')
     .setDescription('Información sobre las fuentes de radio disponibles'),
   
+  // NEW: Lottery system
+  new SlashCommandBuilder()
+    .setName('loteria')
+    .setDescription('🎰 Sistema de lotería del servidor - ¡Compra boletos y gana premios!')
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('jugar')
+        .setDescription('Compra boletos para la lotería')
+        .addIntegerOption(option =>
+          option.setName('boletos')
+            .setDescription('Número de boletos a comprar (1-100)')
+            .setRequired(false)
+            .setMinValue(1)
+            .setMaxValue(100)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('info')
+        .setDescription('Muestra el estado actual de la lotería')
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('sortear')
+        .setDescription('Realiza el sorteo actual (solo admins)')
+    ),
+  
+  // NEW: Gamer profile system
+  new SlashCommandBuilder()
+    .setName('perfil-gamer')
+    .setDescription('🎮 Sistema de perfiles para gamers - ¡Muestra tu identidad gaming!')
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('configurar')
+        .setDescription('Configura tu perfil de gamer')
+        .addStringOption(option =>
+          option.setName('plataforma')
+            .setDescription('Tu plataforma principal')
+            .setRequired(true)
+            .addChoices(
+              { name: '🖥️ Steam', value: 'steam' },
+              { name: '🎮 Xbox', value: 'xbox' },
+              { name: '🎮 PlayStation', value: 'psn' },
+              { name: '🎮 Nintendo Switch', value: 'switch' },
+              { name: '💎 Epic Games', value: 'epic' },
+              { name: '📱 Mobile', value: 'mobile' }
+            )
+        )
+        .addStringOption(option =>
+          option.setName('gamertag')
+            .setDescription('Tu gamertag/username')
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+          option.setName('juego_principal')
+            .setDescription('Tu juego principal')
+            .setRequired(false)
+        )
+        .addStringOption(option =>
+          option.setName('genero_favorito')
+            .setDescription('Tu género favorito')
+            .setRequired(false)
+            .addChoices(
+              { name: '🔫 FPS', value: 'fps' },
+              { name: '⚔️ RPG', value: 'rpg' },
+              { name: '🏆 MOBA', value: 'moba' },
+              { name: '🎯 Battle Royale', value: 'battle_royale' },
+              { name: '⚽ Deportes', value: 'sports' },
+              { name: '🏎️ Carreras', value: 'racing' },
+              { name: '🌲 Supervivencia', value: 'survival' },
+              { name: '🧱 Sandbox', value: 'sandbox' },
+              { name: '🧠 Estrategia', value: 'strategy' },
+              { name: '👻 Terror', value: 'horror' },
+              { name: '🎲 Casual', value: 'casual' }
+            )
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('ver')
+        .setDescription('Ve el perfil de un gamer')
+        .addUserOption(option =>
+          option.setName('usuario')
+            .setDescription('Usuario a ver (deja vacío para ver el tuyo)')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('buscar-squad')
+        .setDescription('Encuentra jugadores para tu squad')
+        .addStringOption(option =>
+          option.setName('juego')
+            .setDescription('Juego para buscar compañeros')
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+          option.setName('plataforma')
+            .setDescription('Plataforma (opcional)')
+            .setRequired(false)
+            .addChoices(
+              { name: '🖥️ Steam', value: 'steam' },
+              { name: '🎮 Xbox', value: 'xbox' },
+              { name: '🎮 PlayStation', value: 'psn' },
+              { name: '🎮 Nintendo Switch', value: 'switch' },
+              { name: '💎 Epic Games', value: 'epic' },
+              { name: '📱 Mobile', value: 'mobile' }
+            )
+        )
+        .addIntegerOption(option =>
+          option.setName('tamaño')
+            .setDescription('Tamaño del squad (2-10 jugadores)')
+            .setRequired(false)
+            .setMinValue(2)
+            .setMaxValue(10)
+        )
+    ),
+  
+  // NEW: Alter-ego/Therian system
+  new SlashCommandBuilder()
+    .setName('alter-ego')
+    .setDescription('🐾 Sistema de alter-ego para therians, furries y otherkin')
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('configurar')
+        .setDescription('Configura tu alter-ego/therian identity')
+        .addStringOption(option =>
+          option.setName('especie')
+            .setDescription('Tu especie/kintype')
+            .setRequired(true)
+            .addChoices(
+              { name: '🐺 Lobo', value: 'lobo' },
+              { name: '🦊 Zorro', value: 'zorro' },
+              { name: '🐱 Gato', value: 'gato' },
+              { name: '🐶 Perro', value: 'perro' },
+              { name: '🦁 León', value: 'leon' },
+              { name: '🐅 Tigre', value: 'tigre' },
+              { name: '🐻 Oso', value: 'oso' },
+              { name: '🐰 Conejo', value: 'conejo' },
+              { name: '🐉 Dragón', value: 'dragon' },
+              { name: '🦅 Águila', value: 'aguila' },
+              { name: '🦤 Cuervo', value: 'cuervo' },
+              { name: '🦉 Búho', value: 'buho' },
+              { name: '🦝 Mapache', value: 'mapache' },
+              { name: '🦌 Venado', value: 'venado' },
+              { name: '✨ Otro', value: 'otro' }
+            )
+        )
+        .addStringOption(option =>
+          option.setName('nombre')
+            .setDescription('Nombre de tu alter-ego (opcional)')
+            .setRequired(false)
+        )
+        .addStringOption(option =>
+          option.setName('pronombres')
+            .setDescription('Tus pronombres preferidos')
+            .setRequired(false)
+        )
+        .addStringOption(option =>
+          option.setName('descripcion')
+            .setDescription('Descripción breve de tu identidad')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('ver')
+        .setDescription('Ve el alter-ego de alguien')
+        .addUserOption(option =>
+          option.setName('usuario')
+            .setDescription('Usuario a ver (deja vacío para ver el tuyo)')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('howl')
+        .setDescription('Expresa tu identidad therian/furry')
+        .addStringOption(option =>
+          option.setName('mensaje')
+            .setDescription('Mensaje adicional (opcional)')
+            .setRequired(false)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('comunidad')
+        .setDescription('Estadísticas de la comunidad therian/furry del servidor')
+    ),
+  
   // Game commands
   new SlashCommandBuilder()
     .setName('8ball')
@@ -418,7 +608,11 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN)
     )
 
     console.log(`✅ Successfully registered ${data.length} slash commands globally!`)
-    console.log('Commands:', data.map(cmd => `/${cmd.name}`).join(', '))
+    console.log('📋 New commands added:')
+    console.log('  🎰 /loteria - Sistema de lotería con premios')
+    console.log('  🎮 /perfil-gamer - Perfiles gaming y buscar squad')
+    console.log('  🐾 /alter-ego - Identidad therian/furry')
+    console.log('\nAll commands:', data.map(cmd => `/${cmd.name}`).join(', '))
   } catch (error) {
     console.error('❌ Error registering commands:', error)
   }
