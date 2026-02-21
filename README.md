@@ -8,6 +8,8 @@ Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 - Sistema de lotería del servidor.
 - **Solome AI**: generación de imágenes/texto con créditos diarios.
 - **Solome Assistant**: chat privado por hilos (beta, acceso con código).
+- **Sistema de anuncios para streamers**: Twitch, Kick, YouTube.
+- **Juegos interactivos**: Duelos, Connect4, TicTacToe y más.
 
 ---
 
@@ -23,6 +25,14 @@ Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 - **Solome Assistant (`/charlar`)**:
   - Crea un hilo para hablar con la IA del bot.
   - Acceso protegido con código beta.
+- **Sistema para creadores de contenido (`/stream`)**:
+  - Configura canales de anuncios para Twitch, Kick y YouTube.
+  - Anuncia cuando estés en vivo con embeds personalizados.
+  - Menciones automáticas de roles.
+- **Juego interactivo (`/duelo`)**:
+  - Piedra, papel o tijeras con botones.
+  - Juega contra otros usuarios o contra el bot.
+  - Resultados en tiempo real con embeds coloridos.
 - Infraestructura lista para:
   - Perfiles gamer.
   - Alter-ego/therian/fursona (tendencias Gen Z).
@@ -147,7 +157,7 @@ Durante la fase beta puedes:
 
 ---
 
-## 🎟️ Lotería del servidor
+## 🏟️ Lotería del servidor
 
 Nuevo comando `/loteria` con subcomandos:
 
@@ -161,6 +171,58 @@ Nuevo comando `/loteria` con subcomandos:
   - Reinicia la ronda.
 
 Los datos se guardan en archivos JSON dentro de la carpeta `/data`.
+
+---
+
+## 📺 Sistema para Streamers (`/stream`)
+
+Nuevo comando diseñado para creadores de contenido:
+
+### Características
+
+- **Configuración por servidor** (`/stream configurar`):
+  - Define el canal donde se anunciarán los streams.
+  - Configura un rol para mencionar automáticamente.
+  - Guarda tus enlaces de Twitch, Kick y YouTube.
+
+- **Anuncio de directo** (`/stream live`):
+  - Selecciona la plataforma (Twitch, Kick o YouTube).
+  - Añade título del stream.
+  - El bot envía un embed con colores y iconos de la plataforma.
+  - Menciona automáticamente al rol configurado.
+
+- **Ver configuración** (`/stream info`):
+  - Muestra todos los ajustes actuales del servidor.
+
+### Ejemplo de uso
+
+```
+/stream configurar canal:#anuncios rol:@notify twitch:https://twitch.tv/tucanal
+/stream live plataforma:twitch titulo:Jugando Valorant - Ranked
+```
+
+---
+
+## 🎮 Juego: Duelo (`/duelo`)
+
+Juego rápido de piedra, papel o tijeras con botones interactivos:
+
+### Modos de juego
+
+- **vs Usuario**: `/duelo oponente:@amigo`
+  - Ambos jugadores eligen en secreto.
+  - El bot revela las elecciones y determina el ganador.
+  
+- **vs Bot**: `/duelo` (sin oponente)
+  - Juegas directamente contra el bot.
+  - Respuesta instantánea.
+
+### Características
+
+- Botones interactivos con emojis (🪨 📄 ✂️).
+- Temporizador de 30 segundos.
+- Embeds coloridos según el resultado.
+- Elección en privado para modo PvP.
 
 ---
 
@@ -178,12 +240,24 @@ Los datos se guardan en archivos JSON dentro de la carpeta `/data`.
 
 ## 🧪 Comandos principales
 
+### Música y Radio
 - `/radio` – Buscar y reproducir estaciones de radio.
 - `/play` / `/stop` / `/skip` / `/queue` – Comandos de música.
-- `/loteria` – Sistema de lotería.
+
+### IA y Asistente
 - `/ia` – Solome AI (imagen, texto, info, recargar).
 - `/charlar` – Abrir chat con Solome Assistant.
-- Varios comandos extra: moderación, juegos, info, tickets, etc. (ver `COMMANDS.md`).
+
+### Diversión y Juegos
+- `/loteria` – Sistema de lotería.
+- `/duelo` – Piedra, papel o tijeras con botones.
+- `/connect4`, `/tictactoe`, `/coinflip`, `/dice` – Otros juegos.
+
+### Creadores de Contenido
+- `/stream` – Sistema de anuncios para Twitch/Kick/YouTube.
+
+### Utilidades
+- Comandos de moderación, info, tickets y más (ver `COMMANDS.md`).
 
 ---
 
@@ -214,6 +288,14 @@ Los datos se guardan en archivos JSON dentro de la carpeta `/data`.
    npm start
    ```
 
+6. (Opcional) Ejecuta con PM2 para mantenerlo 24/7:
+
+   ```bash
+   pm2 start "npm start" --name solome-bot
+   pm2 save
+   pm2 startup
+   ```
+
 ---
 
 ## 🌟 Funciones destacadas
@@ -237,6 +319,39 @@ Los datos se guardan en archivos JSON dentro de la carpeta `/data`.
 - Chat privado en threads.
 - Control de acceso con códigos beta.
 - Límite de mensajes por sesión.
+
+### Sistema para Streamers
+- Anuncios automáticos personalizados.
+- Soporte para múltiples plataformas.
+- Menciones de roles y embeds atractivos.
+
+### Juegos Interactivos
+- Botones y componentes modernos de Discord.
+- Múltiples modos (PvP, vs Bot).
+- Sistema extensible para más juegos.
+
+---
+
+## 📝 Permisos especiales
+
+### Dueño del bot
+
+Algunos comandos estarán restringidos al dueño del bot (definido en `src/utils/ownerOnly.js`).
+
+Para añadir tu ID como dueño:
+
+1. Abre `src/utils/ownerOnly.js`.
+2. Añade tu Discord User ID al array `OWNER_IDS`:
+
+```js
+const OWNER_IDS = [
+  '123456789012345678', // Tu ID aquí
+]
+```
+
+### Administradores de servidor
+
+Comandos como `/stream configurar`, `/loteria sortear` y `/ia recargar` requieren permisos de administrador del servidor.
 
 ---
 
