@@ -1,203 +1,267 @@
-<div align="center">
-  <img src="https://cdn.discordapp.com/attachments/330739726321713153/451058006965354526/baba_logo_xd.png"><br>
-  <b>Baba Radio v4.0 - Discord Bot made with discord.js v14, focused on playing radio stations and music.</b><br><br>
-  <b>🎵 Streaming Solome Radio 🎵</b><br>
-  <b>✅ 5 Music APIs + 5 Radio APIs = 200,000+ Stations!</b><br>
-  <b>🎧 Lavalink v4 + Multiple Nodes</b><br>
-  <b>👨‍💻 Creado por djluisalegre para Solome</b><br><br>
+# 🎧 Solome Bot 4.0 – Baba Radio + Solome AI
 
-  <p>
-    <a href="https://github.com/perronosaurio/Baba-Radio/blob/master/LICENSE" target="_blank"><img src="https://img.shields.io/github/license/perronosaurio/Baba-Radio.svg" alt="License"/></a>
-    <img src="https://img.shields.io/badge/discord.js-v14-blue.svg" alt="Discord.js v14"/>
-    <img src="https://img.shields.io/badge/lavalink-v4-orange.svg" alt="Lavalink v4"/>
-    <img src="https://img.shields.io/badge/status-online-brightgreen.svg" alt="Status"/>
-    <img src="https://img.shields.io/badge/stations-200k+-blue.svg" alt="200k+ Stations"/>
-  </p>
-</div>
+Solome Bot 4.0 (Baba Radio) es un bot multifuncional para Discord que combina:
 
-## 🚀 Installation
+- Radio online (iHeart, TuneIn, MyTuner).
+- Música vía Lavalink v4 (local en Docker, con varios nodos públicos de backup).
+- Juegos y minijuegos para gamers.
+- Sistema de lotería del servidor.
+- **Solome AI**: generación de imágenes/texto con créditos diarios.
+- **Solome Assistant**: chat privado por hilos (beta, acceso con código).
 
-### Prerequisites
-1. [Node.js](https://nodejs.org/) v18 or higher
-2. [FFmpeg](https://ffmpeg.org/) installed on your system
-3. A Discord Bot Token (no privileged intents required!)
+---
 
-### Setup Steps
+## ✨ Novedades 4.0
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/perronosaurio/baba-radio.git
-   cd baba-radio
-   ```
+- **Nueva configuración Lavalink v4** con múltiples nodos públicos y un nodo local en Docker.
+- **Comando `/radio` mejorado** usando streams de varias fuentes.
+- **Nuevo módulo de Lotería** (`/loteria jugar | info | sortear`).
+- **Solome AI (`/ia`)**:
+  - Genera imágenes (`/ia imagen`) y texto (`/ia texto`) usando un backend HTTP (por defecto `localhost`).
+  - Sistema de créditos diarios (15 creaciones al día por usuario).
+  - Comando `/ia info` y `/ia recargar` (para admins).
+- **Solome Assistant (`/charlar`)**:
+  - Crea un hilo para hablar con la IA del bot.
+  - Acceso protegido con código beta.
+- Infraestructura lista para:
+  - Perfiles gamer.
+  - Alter-ego/therian/fursona (tendencias Gen Z).
+  - Más funciones premium.
 
-2. **Install dependencies**
+---
+
+## 🧩 Requisitos
+
+- Node.js 18 o superior.
+- Docker y Docker Compose (para Lavalink local).
+- Token de bot de Discord.
+- (Opcional) API propia o pública para IA (texto e imagen) accesible vía HTTP.
+
+---
+
+## 🚀 Instalación
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/luisitoys12/solome-bot.git
+cd solome-bot
+```
+
+### 2. Configurar variables de entorno
+
+Copia el archivo de ejemplo:
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env` y rellena:
+
+```env
+DISCORD_TOKEN=TU_TOKEN_AQUI
+CLIENT_ID=ID_DE_TU_BOT
+GUILD_ID=ALGUN_GUILD_PARA_REGISTRAR_COMANDOS
+NODE_ENV=production
+```
+
+### 3. Instalar dependencias del bot
+
+```bash
+npm install
+```
+
+> El proyecto usa **discord.js v14**, `@discordjs/voice`, `axios` y otros módulos ya definidos en `package.json`.
+
+---
+
+## 📦 Lavalink v4 en Docker
+
+Solome Bot está preparado para trabajar con:
+
+- Un **Lavalink local** en Docker.
+- Varios **nodos públicos** definidos en `lavalink.config.js`.
+
+### 3.1. Levantar Lavalink local
+
+El archivo `docker-compose.yml` ya está incluido en el proyecto.
+
+```bash
+docker compose up -d lavalink
+```
+
+El bot usará este nodo local más los nodos públicos definidos en `lavalink.config.js` (ajieblogs, DivaHost, RudraCloud, etc.).
+
+Asegúrate de que `lavalink-server/application.yml` contiene la contraseña `babaradio2025` y los plugins que quieras cargar.
+
+---
+
+## 🔧 Configuración de Lavalink en el bot
+
+El archivo `lavalink.config.js` ya viene con varios nodos:
+
+- `baba-local` (localhost:2333).
+- `ajie-v4-ssl` (nodo público principal, SSL).
+- Otros nodos de backup (DivaHost, RudraCloud, Inzeworld, Nextgen, LavalinkHub).
+
+Si necesitas cambiar contraseñas o hosts, edita `lavalink.config.js`.
+
+---
+
+## 🧠 Solome AI
+
+Solome AI funciona mediante un backend HTTP configurable (por defecto `http://localhost:3000`).
+
+### Endpoints esperados
+
+El bot hace peticiones a:
+
+- `POST /ai/image` → `{ url: "https://..." }`
+- `POST /ai/text` → `{ text: "respuesta..." }`
+- `POST /ai/chat` → `{ reply: "mensaje de la IA..." }`
+
+Durante la fase beta puedes:
+
+- Levantar un servidor propio en Node/Express que conecte con la API de IA que prefieras.
+- O apuntar el `BASE_URL` de los comandos a cualquier API pública que tengas configurada.
+
+### Créditos IA
+
+- Cada usuario tiene **15 créditos diarios**.
+- Cada llamada a `/ia imagen` o `/ia texto` consume 1 crédito.
+- `/ia info` muestra los créditos restantes.
+- Admins pueden usar `/ia recargar` para añadir créditos extra a un usuario.
+
+---
+
+## 💬 Solome Assistant (`/charlar`)
+
+- Comando `/charlar codigo:<string>`:
+  - Verifica un **código beta** en la base interna.
+  - Crea un hilo en el canal actual.
+  - Registra la sesión y redirige los mensajes de ese hilo al endpoint `POST /ai/chat`.
+
+- El archivo `aiChat` y el evento `messageCreate` se encargan de:
+  - Limitar la sesión a N mensajes.
+  - Cerrar sesión cuando se llega al límite.
+
+---
+
+## 🎟️ Lotería del servidor
+
+Nuevo comando `/loteria` con subcomandos:
+
+- `/loteria jugar [boletos]`:
+  - Compra boletos para la ronda actual.
+  - Suma al bote virtual (BabaCoins).
+- `/loteria info`:
+  - Muestra bote, boletos y tiempo estimado.
+- `/loteria sortear`:
+  - (Solo admins) Elige ganador aleatorio entre los boletos vendidos.
+  - Reinicia la ronda.
+
+Los datos se guardan en archivos JSON dentro de la carpeta `/data`.
+
+---
+
+## 🎮 Funciones gamer y tendencias
+
+(TODO en próximas versiones, ya está la estructura lista):
+
+- Perfiles gamer (plataformas, juegos favoritos).
+- Matchmaking para armar squads.
+- Alter-ego / therian / fursona:
+  - Comando para guardar "animal interior" o avatar.
+  - Integración con mensajes de juegos y lotería.
+
+---
+
+## 🧪 Comandos principales
+
+- `/radio` – Buscar y reproducir estaciones de radio.
+- `/play` / `/stop` / `/skip` / `/queue` – Comandos de música.
+- `/loteria` – Sistema de lotería.
+- `/ia` – Solome AI (imagen, texto, info, recargar).
+- `/charlar` – Abrir chat con Solome Assistant.
+- Varios comandos extra: moderación, juegos, info, tickets, etc. (ver `COMMANDS.md`).
+
+---
+
+## ▶️ Puesta en marcha rápida
+
+1. Clona el repo y configura `.env`.
+2. Instala dependencias:
+
    ```bash
    npm install
    ```
 
-3. **Configure environment variables**
-   - Copy `.env.example` to `.env`
-   - Add your Discord bot token and client ID to `.env`
-   ```env
-   TOKEN=your_discord_bot_token_here
-   CLIENT_ID=your_bot_application_id
-   PREFIX=!
-   OWNER=your_discord_user_id
+3. Levanta Lavalink local en Docker:
+
+   ```bash
+   docker compose up -d lavalink
    ```
 
-4. **Register slash commands**
+4. Registra los comandos de aplicación:
+
    ```bash
    npm run register
    ```
 
-5. **Start the bot**
+5. Inicia el bot:
+
    ```bash
    npm start
    ```
 
-## 📝 Commands
+---
 
-The bot uses **Slash Commands** with an interactive category system!
+## 🌟 Funciones destacadas
 
-### 🎯 Quick Access
-- **Mention the bot:** `@BABA RADIO` for an interactive menu
-- **Use `/help`:** See all categories with selection menu
-- **Use `/commands`:** Search and browse all commands
+### Radio multicanalera
+- Búsqueda en iHeartRadio, TuneIn y MyTuner.
+- Selección interactiva con menú desplegable.
+- Compatible con Lavalink v4.
 
-### 📚 Command Categories (45 commands)
+### Lotería del servidor
+- Sistema de boletos con bote acumulable.
+- Sorteo automático o manual por admins.
+- Integración futura con economía del bot.
 
-#### 🎵 Música (8 comandos)
-`/play` `/music` `/pause` `/resume` `/skip` `/stop` `/queue` `/lyrics`
+### IA Generativa
+- Créditos diarios para uso justo.
+- Imágenes y texto generados por IA.
+- Sistema extensible para video y más medios.
 
-#### 📻 Radio (2 comandos)
-`/radio` `/radioinfo` - **200,000+ estaciones de todo el mundo**
+### Asistente conversacional
+- Chat privado en threads.
+- Control de acceso con códigos beta.
+- Límite de mensajes por sesión.
 
-#### 🛡️ Moderación (10 comandos)
-`/ban` `/kick` `/unban` `/timeout` `/warn` `/clear` `/lock` `/unlock` `/slowmode` `/moderation`
+---
 
-#### 🎮 Diversión (7 comandos)
-`/8ball` `/tictactoe` `/connect4` `/coinflip` `/dice` `/meme` `/gif`
+## 📄 Licencia
 
-#### 🔧 Utilidad (10 comandos)
-`/ping` `/uptime` `/serverinfo` `/userinfo` `/botinfo` `/avatar` `/wikipedia` `/invite` `/help` `/commands`
+Este proyecto mantiene la licencia original definida en `LICENSE`.
 
-#### ⚙️ Administración (6 comandos)
-`/announce` `/giveaway` `/poll` `/ticket` `/portal` `/premium`
+---
 
-#### 👨‍💻 Desarrollador (2 comandos)
-`/eval` `/credits`
+## 🤝 Contribuir
 
-### 💡 How to use:
-1. **Mention the bot** (`@BABA RADIO`) for an interactive menu with categories
-2. **Use `/help`** to see all categories with selection menu
-3. **Use `/commands`** to search for specific commands
-4. **Join a voice channel** and use `/play` or `/radio` to start listening
-5. **Type `/`** to see all available slash commands
+Si quieres aportar funciones o reportar bugs:
 
-For detailed command documentation, see [COMMANDS_GUIDE.md](./COMMANDS_GUIDE.md)
+1. Haz fork del repositorio.
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcion`).
+3. Commit tus cambios (`git commit -m 'Añadir nueva función'`).
+4. Push a la rama (`git push origin feature/nueva-funcion`).
+5. Abre un Pull Request.
 
-## 🎵 Features
+---
 
-### Music APIs (5)
-- 🎧 **Spotify Web API** - Search, recommendations, playlists
-- 🎼 **Jamendo API** - 500,000+ royalty-free tracks
-- 📀 **TheAudioDB** - Artist info, albums, music videos
+## 📞 Soporte
 
-### Radio APIs (5)
-- 📻 **iHeartRadio** - USA coverage, high quality (320kbps)
-- 🌐 **TuneIn** - 100,000+ stations globally
-- 📡 **Radio Browser** - 50,000+ stations, 190+ countries
-- 🎙️ **Zeno.FM** - 50,000+ stations worldwide
-- 🌍 **Radio Garden** - Global radio exploration
+Para preguntas o problemas, abre un issue en GitHub o contacta al equipo de Solome/EstacionKusTV.
 
-### Audio Streaming
-- 🎵 Lavalink v4 with multiple nodes
-- 🔊 High-quality audio (up to 320kbps)
-- 🔄 Automatic node failover
-- 💾 Local Lavalink server included
-- 🎚️ Volume control and audio filters
+---
 
-### Games & Fun
-- 🎱 Magic 8-Ball fortune teller
-- ⭕ Tic-Tac-Toe (Gato) multiplayer game
-- 🔴 Connect 4 (4 en línea) multiplayer game
-- 🎮 Interactive button-based gameplay
-
-### Information
-- 📖 Wikipedia search with multiple languages
-- 💬 Helpful bot mention response
-- 📋 Interactive dropdown menus
-
-### Technical
-- ✅ 41+ commands
-- 🚀 200,000+ radio stations
-- 🎯 Modern slash commands
-- 🔄 Automatic command registration
-- 🌐 Multiple API integrations
-
-## 🔧 Tech Stack
-
-- **Discord.js v14** - Discord bot framework
-- **Lavalink v4** - High-performance audio streaming
-- **Lavalink-client** - Node.js Lavalink wrapper
-- **Spotify Web API** - Music search and recommendations
-- **Jamendo API** - Royalty-free music
-- **TheAudioDB** - Music metadata
-- **Zeno.FM API** - Radio stations
-- **Radio Garden API** - Global radio
-- **iHeartRadio API** - USA radio stations
-- **TuneIn API** - Global radio stations
-- **Radio Browser API** - Community radio database
-
-## 📊 Statistics
-
-- **Total Radio Stations**: 200,000+
-- **Music Tracks**: Unlimited (via APIs)
-- **Countries Covered**: 190+
-- **Audio Quality**: Up to 320kbps
-- **Lavalink Nodes**: 7 (6 public + 1 local)
-- **Commands**: 41+
-- **APIs Integrated**: 10
-
-## 📚 Documentation
-
-For detailed documentation, see:
-- [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Complete implementation details
-- [RADIO_APIS.md](./RADIO_APIS.md) - Radio API documentation
-- [lavalink.config.js](./lavalink.config.js) - Lavalink configuration
-
-## 🧪 Testing
-
-Test all APIs:
-```bash
-node test-apis.js
-```
-
-## 🎯 API Usage
-
-### Music APIs
-```javascript
-const apis = require('./src/apis')
-
-// Spotify
-const tracks = await apis.spotify.searchTracks('Adele', 10)
-
-// Jamendo (Royalty-free)
-const freeTracks = await apis.jamendo.searchTracks('electronic', 20)
-
-// TheAudioDB
-const artist = await apis.theaudiodb.searchArtist('Coldplay')
-```
-
-### Radio APIs
-```javascript
-// Zeno.FM
-const stations = await apis.zenofm.searchStations('rock', 20)
-
-// Radio Garden
-const stations = await apis.radiogarden.searchStations('london')
-```
-
-## 📄 License
-
-MIT License - see LICENSE file for details
+**Desarrollado con ❤️ por el equipo de Baba Radio / EstacionKusTV**
