@@ -1,6 +1,6 @@
 // src/utils/database.js
-// Simple JSON-based storage system for BabaRadio Bot
-// Stores data in /data directory with automatic creation
+// Simple JSON-based database for Solome Bot 4.0
+// Stores lottery, IA credits, chat sessions, and more
 
 const fs = require('fs')
 const path = require('path')
@@ -17,10 +17,10 @@ function ensureDir () {
 }
 
 /**
- * Load JSON data from /data directory
- * @param {string} name - File name (without .json)
- * @param {*} defaultValue - Default value if file doesn't exist
- * @returns {*} Parsed JSON data or defaultValue
+ * Loads a JSON file from /data
+ * @param {string} name - Filename without extension
+ * @param {*} defaultValue - Value to return if file doesn't exist
+ * @returns {*} Parsed JSON or defaultValue
  */
 function load (name, defaultValue) {
   ensureDir()
@@ -40,9 +40,9 @@ function load (name, defaultValue) {
 }
 
 /**
- * Save JSON data to /data directory
- * @param {string} name - File name (without .json)
- * @param {*} value - Data to save
+ * Saves data to a JSON file in /data
+ * @param {string} name - Filename without extension
+ * @param {*} value - Data to save (will be stringified)
  */
 function save (name, value) {
   ensureDir()
