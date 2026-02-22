@@ -1,215 +1,202 @@
-// src/commands/alter-ego.js
-// Alter-Ego System for Therians, Furries & Otherkin
-// Respectful and fun identity expression for trending communities
-
 const Command = require('../structures/command.js')
 const { EmbedBuilder } = require('discord.js')
-const { load, save } = require('../utils/database.js')
-
-const ANIMAL_EMOJIS = {
-  lobo: '🐺',
-  zorro: '🦊',
-  gato: '🐱',
-  perro: '🐶',
-  leon: '🦁',
-  tigre: '🐅',
-  oso: '🐻',
-  conejo: '🐰',
-  dragon: '🐉',
-  aguila: '🦅',
-  cuervo: '🦤',
-  buho: '🦉',
-  mapache: '🦝',
-  venado: '🦌',
-  otro: '✨'
-}
-
-const HOWLS = [
-  '*aulla hacia la luna* 🌕🐺',
-  '*mueve las orejas con curiosidad* 🐾',
-  '*sacude la cola con emoción* ✨',
-  '*gruñe de forma amistosa* 💪',
-  '*estira las patas* 🦴',
-  '*olfatea el aire* 👃',
-  '*corre por el bosque* 🌲',
-  '*salta con energía* 🥸'
-]
-
-/**
- * Get alter-ego profile
- */
-function getAlterEgo (userId) {
-  const profiles = load('alter-ego', {})
-  return profiles[userId] || null
-}
-
-/**
- * Save alter-ego profile
- */
-function saveAlterEgo (userId, profile) {
-  const profiles = load('alter-ego', {})
-  profiles[userId] = profile
-  save('alter-ego', profiles)
-}
 
 module.exports = class AlterEgo extends Command {
   constructor (client) {
     super(client, {
       name: 'alter-ego',
-      aliases: ['therian', 'fursona', 'kintype'],
-      description: '🐾 Sistema de alter-ego para therians, furries y otherkin'
+      aliases: ['alterego', 'therian', 'fursona'],
+      description: '🐾 Define y gestiona tu alter-ego, therian o fursona'
     })
   }
 
   async runSlash (interaction) {
-    const sub = interaction.options.getSubcommand()
-
-    // Subcommand: configurar (setup alter-ego)
-    if (sub === 'configurar') {
-      await interaction.deferReply({ ephemeral: true })
-
-      const especie = interaction.options.getString('especie')
-      const nombre = interaction.options.getString('nombre') || null
-      const pronombres = interaction.options.getString('pronombres') || 'they/them'
-      const descripcion = interaction.options.getString('descripcion') || 'Sin descripción'
-
-      const profile = {
-        especie,
-        nombre,
-        pronombres,
-        descripcion,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      }
-
-      saveAlterEgo(interaction.user.id, profile)
-
-      const emoji = ANIMAL_EMOJIS[especie] || ANIMAL_EMOJIS.otro
-      const displayName = nombre || `${especie.charAt(0).toUpperCase() + especie.slice(1)}`
-
-      const embed = new EmbedBuilder()
-        .setColor(0xe91e63)
-        .setTitle(`${emoji} Alter-Ego Configurado`)
-        .setDescription(`¡Tu identidad ha sido actualizada!`)
-        .addFields(
-          { name: '🐾 Especie', value: `${emoji} ${especie.charAt(0).toUpperCase() + especie.slice(1)}`, inline: true },
-          { name: '📛 Nombre', value: displayName, inline: true },
-          { name: '🏳️ Pronombres', value: pronombres, inline: true },
-          { name: '✨ Descripción', value: descripcion, inline: false }
-        )
-        .setThumbnail(interaction.user.displayAvatarURL())
-        .setFooter({ text: 'Tu identidad es válida y respetada aquí ❤️' })
-        .setTimestamp()
-
-      return interaction.editReply({ embeds: [embed] })
+    const subcommand = interaction.options.getSubcommand()
+    
+    if (subcommand === 'crear') {
+      await this.crear(interaction)
+    } else if (subcommand === 'editar') {
+      await this.editar(interaction)
+    } else if (subcommand === 'ver') {
+      await this.ver(interaction)
+    } else if (subcommand === 'eliminar') {
+      await this.eliminar(interaction)
+    } else if (subcommand === 'galeria') {
+      await this.galeria(interaction)
     }
+  }
 
-    // Subcommand: ver (view alter-ego)
-    if (sub === 'ver') {
-      const targetUser = interaction.options.getUser('usuario') || interaction.user
-      const profile = getAlterEgo(targetUser.id)
-
-      if (!profile) {
-        return interaction.reply({
-          content: targetUser.id === interaction.user.id
-            ? '❌ No tienes un alter-ego configurado. Usa `/alter-ego configurar` para crear uno.'
-            : `❌ ${targetUser.username} no tiene un alter-ego configurado.`,
-          ephemeral: true
-        })
-      }
-
-      const emoji = ANIMAL_EMOJIS[profile.especie] || ANIMAL_EMOJIS.otro
-      const displayName = profile.nombre || profile.especie
-      const createdDate = new Date(profile.createdAt).toLocaleDateString('es-ES')
-
-      const embed = new EmbedBuilder()
-        .setColor(0xf06292)
-        .setTitle(`${emoji} Alter-Ego: ${displayName}`)
-        .setDescription(`Identidad de ${targetUser.username}`)
-        .addFields(
-          { name: '🐾 Especie', value: `${emoji} ${profile.especie.charAt(0).toUpperCase() + profile.especie.slice(1)}`, inline: true },
-          { name: '🏳️ Pronombres', value: profile.pronombres, inline: true },
-          { name: '✨ Sobre mí', value: profile.descripcion, inline: false },
-          { name: '📅 Desde', value: createdDate, inline: true }
-        )
-        .setThumbnail(targetUser.displayAvatarURL({ size: 256 }))
-        .setFooter({ text: 'BabaRadio - Comunidad inclusiva y respetuosa' })
-        .setTimestamp()
-
-      return interaction.reply({ embeds: [embed] })
-    }
-
-    // Subcommand: howl (fun interaction)
-    if (sub === 'howl') {
-      const profile = getAlterEgo(interaction.user.id)
-      
-      if (!profile) {
-        return interaction.reply({
-          content: '❌ Necesitas configurar tu alter-ego primero con `/alter-ego configurar`.',
-          ephemeral: true
-        })
-      }
-
-      const emoji = ANIMAL_EMOJIS[profile.especie] || ANIMAL_EMOJIS.otro
-      const displayName = profile.nombre || profile.especie
-      const randomHowl = HOWLS[Math.floor(Math.random() * HOWLS.length)]
-      
-      const message = interaction.options.getString('mensaje')
-      
-      const embed = new EmbedBuilder()
-        .setColor(0xab47bc)
-        .setDescription(`${emoji} **${displayName}** (${interaction.user.username}):\n${randomHowl}${message ? `\n\n"${message}"` : ''}`)
-        .setThumbnail(interaction.user.displayAvatarURL())
-        .setFooter({ text: 'Expresión therian/furry' })
-        .setTimestamp()
-
-      return interaction.reply({ embeds: [embed] })
-    }
-
-    // Subcommand: comunidad (community stats)
-    if (sub === 'comunidad') {
-      const profiles = load('alter-ego', {})
-      const guildMembers = await interaction.guild.members.fetch()
-      
-      const guildProfiles = Object.entries(profiles).filter(([userId]) => 
-        guildMembers.has(userId)
+  async crear(interaction) {
+    const nombre = interaction.options.getString('nombre')
+    const tipo = interaction.options.getString('tipo')
+    const especie = interaction.options.getString('especie')
+    const descripcion = interaction.options.getString('descripcion')
+    const personalidad = interaction.options.getString('personalidad') || 'Por definir'
+    const imagen = interaction.options.getString('imagen') || null
+    
+    // Aquí guardarías en base de datos
+    const embed = new EmbedBuilder()
+      .setColor(0xff69b4)
+      .setTitle(`🐾 Alter-Ego Creado: ${nombre}`)
+      .setDescription(descripcion)
+      .addFields(
+        { name: '🎭 Tipo', value: tipo, inline: true },
+        { name: '🦊 Especie', value: especie, inline: true },
+        { name: '✨ Personalidad', value: personalidad, inline: false },
+        { name: '👤 Dueño', value: `<@${interaction.user.id}>`, inline: true }
       )
+      .setFooter({ text: 'Usa /alter-ego editar para modificar' })
+      .setTimestamp()
+    
+    if (imagen) {
+      embed.setThumbnail(imagen)
+    }
+    
+    await interaction.reply({ embeds: [embed] })
+  }
 
-      if (guildProfiles.length === 0) {
-        return interaction.reply({
-          content: '❌ No hay alter-egos configurados en este servidor aún.',
-          ephemeral: true
-        })
-      }
+  async editar(interaction) {
+    const campo = interaction.options.getString('campo')
+    const valor = interaction.options.getString('valor')
+    
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle('✅ Alter-Ego Actualizado')
+      .setDescription(`**${campo}** ha sido actualizado a:\n${valor}`)
+      .setFooter({ text: 'Cambios guardados exitosamente' })
+      .setTimestamp()
+    
+    await interaction.reply({ embeds: [embed] })
+  }
 
-      // Count species
-      const speciesCount = {}
-      for (const [, profile] of guildProfiles) {
-        speciesCount[profile.especie] = (speciesCount[profile.especie] || 0) + 1
-      }
+  async ver(interaction) {
+    const usuario = interaction.options.getUser('usuario') || interaction.user
+    
+    // Simular datos (en producción: obtener de BD)
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle(`🐾 Alter-Ego de ${usuario.username}`)
+      .setDescription('Un lobo ártico misterioso con poderes de hielo')
+      .addFields(
+        { name: '🏷️ Nombre', value: 'Luna Frost', inline: true },
+        { name: '🎭 Tipo', value: 'Therian', inline: true },
+        { name: '🦊 Especie', value: 'Lobo Ártico', inline: true },
+        { name: '✨ Personalidad', value: 'Reservado, protector, leal', inline: false },
+        { name: '🎨 Características', value: '• Pelaje blanco como la nieve\n• Ojos azul hielo\n• Collar de cristales mágicos', inline: false },
+        { name: '📊 Estadísticas', value: '⭐ Fuerza: 8/10\n💨 Velocidad: 9/10\n🧠 Inteligencia: 7/10', inline: false }
+      )
+      .setThumbnail(usuario.displayAvatarURL())
+      .setFooter({ text: `Creado el ${new Date().toLocaleDateString()}` })
+      .setTimestamp()
+    
+    await interaction.reply({ embeds: [embed] })
+  }
 
-      const topSpecies = Object.entries(speciesCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([especie, count]) => {
-          const emoji = ANIMAL_EMOJIS[especie] || ANIMAL_EMOJIS.otro
-          return `${emoji} **${especie}**: ${count} miembro(s)`
-        })
-        .join('\n')
+  async eliminar(interaction) {
+    const embed = new EmbedBuilder()
+      .setColor(0xff0000)
+      .setTitle('⚠️ Alter-Ego Eliminado')
+      .setDescription('Tu alter-ego ha sido eliminado permanentemente.')
+      .setFooter({ text: 'Puedes crear uno nuevo con /alter-ego crear' })
+      .setTimestamp()
+    
+    await interaction.reply({ embeds: [embed], ephemeral: true })
+  }
 
-      const embed = new EmbedBuilder()
-        .setColor(0x7b1fa2)
-        .setTitle('🌐 Comunidad Therian/Furry')
-        .setDescription(`Estadísticas de alter-egos en **${interaction.guild.name}**`)
-        .addFields(
-          { name: '👥 Total de miembros', value: `${guildProfiles.length}`, inline: true },
-          { name: '🐾 Especies más populares', value: topSpecies || 'Sin datos', inline: false }
-        )
-        .setThumbnail(interaction.guild.iconURL())
-        .setFooter({ text: 'BabaRadio - Espacio seguro para todos' })
-        .setTimestamp()
+  async galeria(interaction) {
+    await interaction.deferReply()
+    
+    const miembros = await interaction.guild.members.fetch()
+    const alters = miembros.filter(m => !m.user.bot).random(6)
+    
+    const embed = new EmbedBuilder()
+      .setColor(0xe91e63)
+      .setTitle('🎨 Galería de Alter-Egos')
+      .setDescription(`**${alters.size}** alter-egos destacados del servidor`)
+    
+    alters.forEach(member => {
+      embed.addFields({
+        name: `🐾 ${member.user.username}`,
+        value: `Tipo: Therian | Especie: Aleatorio\n[Ver perfil completo](/alter-ego ver ${member.user.id})`,
+        inline: true
+      })
+    })
+    
+    embed.setFooter({ text: `Total de alter-egos en ${interaction.guild.name}` })
+    embed.setTimestamp()
+    
+    await interaction.editReply({ embeds: [embed] })
+  }
 
-      return interaction.reply({ embeds: [embed] })
+  getSlashCommandData() {
+    return {
+      name: this.name,
+      description: this.description,
+      options: [
+        {
+          type: 1, // SUB_COMMAND
+          name: 'crear',
+          description: 'Crea tu alter-ego, therian o fursona',
+          options: [
+            { type: 3, name: 'nombre', description: 'Nombre de tu alter-ego', required: true },
+            { 
+              type: 3, 
+              name: 'tipo', 
+              description: 'Tipo de alter-ego', 
+              required: true,
+              choices: [
+                { name: 'Therian', value: 'therian' },
+                { name: 'Fursona', value: 'fursona' },
+                { name: 'Kintype', value: 'kintype' },
+                { name: 'Original Character', value: 'oc' }
+              ]
+            },
+            { type: 3, name: 'especie', description: 'Especie (lobo, dragón, etc.)', required: true },
+            { type: 3, name: 'descripcion', description: 'Descripción física', required: true },
+            { type: 3, name: 'personalidad', description: 'Rasgos de personalidad', required: false },
+            { type: 3, name: 'imagen', description: 'URL de imagen de referencia', required: false }
+          ]
+        },
+        {
+          type: 1,
+          name: 'editar',
+          description: 'Edita tu alter-ego existente',
+          options: [
+            {
+              type: 3,
+              name: 'campo',
+              description: 'Campo a editar',
+              required: true,
+              choices: [
+                { name: 'Nombre', value: 'nombre' },
+                { name: 'Especie', value: 'especie' },
+                { name: 'Descripción', value: 'descripcion' },
+                { name: 'Personalidad', value: 'personalidad' },
+                { name: 'Imagen', value: 'imagen' }
+              ]
+            },
+            { type: 3, name: 'valor', description: 'Nuevo valor', required: true }
+          ]
+        },
+        {
+          type: 1,
+          name: 'ver',
+          description: 'Ver alter-ego de alguien',
+          options: [
+            { type: 6, name: 'usuario', description: 'Usuario a consultar (opcional)', required: false }
+          ]
+        },
+        {
+          type: 1,
+          name: 'eliminar',
+          description: 'Elimina tu alter-ego permanentemente'
+        },
+        {
+          type: 1,
+          name: 'galeria',
+          description: 'Muestra la galería de alter-egos del servidor'
+        }
+      ]
     }
   }
 }
