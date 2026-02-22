@@ -1,0 +1,36 @@
+{
+  "global": {
+    "provider": "gemini",
+    "providers": {
+      "openai": {
+        "apiKey": "YOUR_OPENAI_API_KEY",
+        "models": {
+          "chat": "gpt-4-turbo",
+          "image": "dall-e-3",
+          "tts": "tts-1"
+        }
+      },
+      "gemini": {
+        "apiKey": "YOUR_GEMINI_API_KEY",
+        "models": {
+          "chat": "gemini-2.0-flash-exp",
+          "image": "imagen-3.0",
+          "tts": "gemini-tts"
+        }
+      },
+      "anthropic": {
+        "apiKey": "YOUR_ANTHROPIC_API_KEY",
+        "models": {
+          "chat": "claude-3-5-sonnet-20241022"
+        }
+      },
+      "ollama": {
+        "baseUrl": "http://localhost:11434",
+        "models": {
+          "chat": "llama3.1",
+          "image": "stable-diffusion"
+        }
+      }
+    }
+  }
+}
