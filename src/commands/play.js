@@ -117,4 +117,19 @@ module.exports = class Play extends Command {
     }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
+
+  getSlashCommandData() {
+    return {
+      name: this.name,
+      description: this.description,
+      options: [
+        {
+          type: 3, // STRING
+          name: 'cancion',
+          description: 'Nombre de la canción, URL de YouTube/Spotify/SoundCloud o enlace MP3',
+          required: true
+        }
+      ]
+    }
+  }
 }

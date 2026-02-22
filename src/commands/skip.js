@@ -4,7 +4,8 @@ module.exports = class Skip extends Command {
   constructor (client) {
     super(client, {
       name: 'skip',
-      description: 'Salta la canción actual'
+      aliases: ['s', 'next', 'saltar'],
+      description: 'Salta a la siguiente canción en la cola'
     })
   }
 
@@ -14,18 +15,26 @@ module.exports = class Skip extends Command {
     }
 
     if (!this.client.lavalink) {
-      return interaction.reply({ content: '❌ El sistema de música no está disponible.', ephemeral: true })
+      return interaction.reply({ content: '❌ Sistema de música no disponible.', ephemeral: true })
     }
 
     const player = this.client.lavalink.getPlayer(interaction.guild.id)
-    
+
     if (!player || !player.queue.current) {
-      return interaction.reply({ content: '❌ No hay ninguna canción reproduciéndose.', ephemeral: true })
+      return interaction.reply({ content: '❌ No hay música reproduciéndose.', ephemeral: true })
     }
 
-    const skipped = player.queue.current
+    const currentTrack = player.queue.current
+
     await player.skip()
 
-    await interaction.reply({ content: `⏭️ Canción saltada: **${skipped.info.title}**` })
+    await interaction.reply(`⏭️ Saltado: **${currentTrack.info.title}**`)
+  }
+
+  getSlashCommandData() {
+    return {
+      name: this.name,
+      description: this.description
+    }
   }
 }

@@ -4,6 +4,7 @@ module.exports = class Stop extends Command {
   constructor (client) {
     super(client, {
       name: 'stop',
+      aliases: ['disconnect', 'dc', 'leave', 'parar'],
       description: 'Detiene la música y limpia la cola'
     })
   }
@@ -14,17 +15,24 @@ module.exports = class Stop extends Command {
     }
 
     if (!this.client.lavalink) {
-      return interaction.reply({ content: '❌ El sistema de música no está disponible.', ephemeral: true })
+      return interaction.reply({ content: '❌ Sistema de música no disponible.', ephemeral: true })
     }
 
     const player = this.client.lavalink.getPlayer(interaction.guild.id)
-    
+
     if (!player) {
-      return interaction.reply({ content: '❌ No hay ninguna canción reproduciéndose.', ephemeral: true })
+      return interaction.reply({ content: '❌ No hay música reproduciéndose.', ephemeral: true })
     }
 
     await player.destroy()
 
-    await interaction.reply({ content: '⏹️ Música detenida y cola limpiada.' })
+    await interaction.reply('⏹️ Música detenida y cola limpiada.')
+  }
+
+  getSlashCommandData() {
+    return {
+      name: this.name,
+      description: this.description
+    }
   }
 }

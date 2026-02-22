@@ -5,41 +5,47 @@ module.exports = class Queue extends Command {
   constructor (client) {
     super(client, {
       name: 'queue',
+      aliases: ['q', 'cola'],
       description: 'Muestra la cola de reproducción actual'
     })
   }
 
   async runSlash (interaction) {
     if (!this.client.lavalink) {
-      return interaction.reply({ content: '❌ El sistema de música no está disponible.', ephemeral: true })
+      return interaction.reply({ content: '❌ Sistema de música no disponible.', ephemeral: true })
     }
 
     const player = this.client.lavalink.getPlayer(interaction.guild.id)
-    
+
     if (!player || !player.queue.current) {
-      return interaction.reply({ content: '❌ No hay ninguna canción en la cola.', ephemeral: true })
+      return interaction.reply({ content: '❌ No hay música reproduciéndose.', ephemeral: true })
     }
 
     const current = player.queue.current
-    const queue = player.queue.tracks.slice(0, 10)
+    const queue = player.queue.tracks
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle('🎵 Cola de Reproducción')
-      .setDescription(`**Reproduciendo Ahora:**\n[${current.info.title}](${current.info.uri})\n\`${this.formatDuration(current.info.duration)}\``)
+      .setDescription(
+        `**Reproduciendo ahora:**\n` +
+        `[${current.info.title}](${current.info.uri || 'https://discord.com'})\n` +
+        `👤 ${current.info.author} • ⏱️ ${this.formatDuration(current.info.duration)}`
+      )
+      .setThumbnail(current.info.artworkUrl || null)
+      .setFooter({ text: `${queue.length} canciones en cola` })
+      .setTimestamp()
 
     if (queue.length > 0) {
-      const queueList = queue.map((track, i) => 
-        `${i + 1}. [${track.info.title}](${track.info.uri}) - \`${this.formatDuration(track.info.duration)}\``
+      const upcoming = queue.slice(0, 10).map((track, i) => 
+        `**${i + 1}.** [${track.info.title}](${track.info.uri || 'https://discord.com'}) - \`${this.formatDuration(track.info.duration)}\``
       ).join('\n')
-      
-      embed.addFields({ name: '📋 Próximas Canciones', value: queueList })
-      
-      if (player.queue.tracks.length > 10) {
-        embed.setFooter({ text: `Y ${player.queue.tracks.length - 10} canciones más...` })
+
+      embed.addFields({ name: 'Próximas canciones', value: upcoming })
+
+      if (queue.length > 10) {
+        embed.addFields({ name: '\u200b', value: `*...y ${queue.length - 10} canciones más*` })
       }
-    } else {
-      embed.addFields({ name: '📋 Cola', value: 'No hay más canciones en la cola' })
     }
 
     await interaction.reply({ embeds: [embed] })
@@ -54,5 +60,12 @@ module.exports = class Queue extends Command {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
     }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  getSlashCommandData() {
+    return {
+      name: this.name,
+      description: this.description
+    }
   }
 }
