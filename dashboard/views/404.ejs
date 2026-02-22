@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Página no encontrada</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>Solome Bot</span>
+            </div>
+            <div class="nav-links">
+                <% if (user) { %>
+                    <a href="/dashboard" class="btn btn-primary">Dashboard</a>
+                    <a href="/logout" class="btn btn-outline">Cerrar sesión</a>
+                <% } else { %>
+                    <a href="/login" class="btn btn-primary">Iniciar sesión</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <section class="empty-state" style="min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <i class="fas fa-exclamation-triangle fa-5x" style="color: var(--warning);"></i>
+        <h1 style="font-size: 72px; margin: 20px 0;">404</h1>
+        <h2 style="margin-bottom: 20px;">🤔 Página no encontrada</h2>
+        <p style="margin-bottom: 30px;">La página que buscas no existe o fue movida.</p>
+        <a href="/" class="btn btn-primary btn-large">
+            <i class="fas fa-home"></i> Volver al inicio
+        </a>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Solome Bot - EstacionKusTV</p>
+        </div>
+    </footer>
+</body>
+</html>
