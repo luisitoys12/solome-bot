@@ -1,0 +1,165 @@
+{
+  "version": "5.0.0-beta",
+  "bot": {
+    "prefix": "!",
+    "owners": [],
+    "betaUsers": [],
+    "betaGuilds": []
+  },
+  "features": {
+    "economy": {
+      "enabled": true,
+      "coinName": "SolomeCoins",
+      "coinEmoji": "💎",
+      "earningRates": {
+        "musicPerMinute": 5,
+        "radioPerMinute": 3,
+        "messagePerMinute": 1,
+        "gameWin": 50,
+        "gameLose": -10
+      }
+    },
+    "ai": {
+      "enabled": true,
+      "defaultProvider": "openai",
+      "providers": {
+        "openai": {
+          "enabled": true,
+          "models": {
+            "chat": "gpt-4o-mini",
+            "image": "dall-e-3"
+          }
+        },
+        "gemini": {
+          "enabled": false,
+          "models": {
+            "chat": "gemini-2.0-flash-exp",
+            "image": "imagen-3",
+            "tts": "lyria-3"
+          }
+        },
+        "anthropic": {
+          "enabled": false,
+          "models": {
+            "chat": "claude-3-5-sonnet-20241022"
+          }
+        }
+      },
+      "limits": {
+        "free": {
+          "daily": 20,
+          "perRequest": 2000
+        },
+        "pro": {
+          "daily": 500,
+          "perRequest": 8000
+        },
+        "beta": {
+          "daily": -1,
+          "perRequest": 32000
+        }
+      }
+    },
+    "advertising": {
+      "enabled": true,
+      "freeServers": true,
+      "frequency": {
+        "musicEveryXSongs": 5,
+        "radioEveryXMinutes": 15
+      },
+      "defaultCampaigns": [
+        {
+          "id": "upgrade_pro",
+          "type": "text",
+          "message": "🌟 **Mejora a Solome Pro** y elimina todos los anuncios. Más música, más IA, más diversión. `/panel` para más info."
+        },
+        {
+          "id": "radio_247",
+          "type": "text",
+          "message": "📻 **Activa Radio 24/7** en tu servidor con Solome Pro. Emisora sin interrupciones."
+        },
+        {
+          "id": "sponsor_info",
+          "type": "text",
+          "message": "💼 **SOLOME Sponsor**: Anuncia tu marca en miles de servidores. Visita el dashboard para crear tu campaña."
+        }
+      ]
+    },
+    "sports": {
+      "enabled": true,
+      "beta": true,
+      "providers": {
+        "thesportsdb": {
+          "enabled": true,
+          "free": true
+        },
+        "apiFootball": {
+          "enabled": false,
+          "requiresKey": true
+        }
+      },
+      "defaultLeagues": [
+        "Liga MX",
+        "UEFA Champions League",
+        "Premier League",
+        "La Liga"
+      ],
+      "virtualBetting": {
+        "enabled": true,
+        "useCoinSystem": true,
+        "minBet": 10,
+        "maxBet": 1000
+      }
+    },
+    "radio247": {
+      "enabled": true,
+      "beta": true,
+      "autoReconnect": true,
+      "maxBitrate": {
+        "free": 96,
+        "pro": 320
+      }
+    }
+  },
+  "plans": {
+    "free": {
+      "name": "Free",
+      "features": {
+        "music": true,
+        "radio": true,
+        "basicAI": true,
+        "games": true,
+        "ads": true,
+        "queueLimit": 20,
+        "songDurationLimit": 600
+      }
+    },
+    "pro": {
+      "name": "Pro",
+      "price": 4.99,
+      "features": {
+        "music": true,
+        "radio": true,
+        "advancedAI": true,
+        "games": true,
+        "ads": false,
+        "queueLimit": 100,
+        "songDurationLimit": -1,
+        "radio247": true,
+        "sports": true,
+        "customAds": true,
+        "dashboard": true
+      }
+    },
+    "beta": {
+      "name": "Beta Supporter",
+      "description": "Acceso anticipado a todas las funciones experimentales",
+      "features": {
+        "everything": true,
+        "betaCommands": true,
+        "prioritySupport": true,
+        "noLimits": true
+      }
+    }
+  }
+}
