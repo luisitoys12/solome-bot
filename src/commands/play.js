@@ -124,7 +124,7 @@ module.exports = class Play extends Command {
       description: this.description,
       options: [
         {
-          type: 3, // STRING
+          type: 3,
           name: 'cancion',
           description: 'Nombre de la canción, URL de YouTube/Spotify/SoundCloud o enlace MP3',
           required: true

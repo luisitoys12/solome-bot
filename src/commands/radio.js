@@ -1,6 +1,6 @@
 const Command = require('../structures/command.js')
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType } = require('discord.js')
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, entersState } = require('@discordjs/voice')
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, VoiceConnectionStatus, entersState } = require('@discordjs/voice')
 const { search: iheartSearch, streamURL: iheartStreamURL } = require('iheart')
 const axios = require('axios')
 
@@ -26,7 +26,6 @@ module.exports = class Radio extends Command {
     try {
       let stations = []
 
-      // Buscar en iHeartRadio
       if (source === 'all' || source === 'iheart') {
         try {
           const iheartResults = await iheartSearch(query)
@@ -46,7 +45,6 @@ module.exports = class Radio extends Command {
         }
       }
 
-      // Buscar en TuneIn
       if (source === 'all' || source === 'tunein') {
         try {
           const tuneinResponse = await axios.get('http://opml.radiotime.com/Search.ashx', {
@@ -79,7 +77,6 @@ module.exports = class Radio extends Command {
         }
       }
 
-      // Buscar en MyTuner
       if (source === 'all' || source === 'mytuner') {
         try {
           const mytunerResponse = await axios.get('https://de1.api.radio-browser.info/json/stations/search', {
@@ -254,13 +251,13 @@ module.exports = class Radio extends Command {
       description: this.description,
       options: [
         {
-          type: 3, // STRING
+          type: 3,
           name: 'estacion',
           description: 'Nombre de la estación de radio',
           required: true
         },
         {
-          type: 3, // STRING
+          type: 3,
           name: 'fuente',
           description: 'Fuente de búsqueda',
           required: false,
