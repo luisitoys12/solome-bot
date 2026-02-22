@@ -27,6 +27,14 @@ for (const file of commandFiles) {
       // Verifica si tiene el método getSlashCommandData
       if (typeof commandInstance.getSlashCommandData === 'function') {
         const commandData = commandInstance.getSlashCommandData()
+        
+        // VALIDACIÓN: Verificar que description exista y no esté vacío
+        if (!commandData || !commandData.name || typeof commandData.description !== 'string' || commandData.description.length === 0) {
+          console.log(`  ❌ ${file} - INVALID: missing or empty description`)
+          console.log(`     commandData:`, JSON.stringify(commandData, null, 2))
+          continue
+        }
+        
         commands.push(commandData)
         console.log(`  ✅ ${file} - /${commandData.name}`)
       } else {
@@ -41,6 +49,17 @@ for (const file of commandFiles) {
 }
 
 console.log(`\n📦 Total de comandos a registrar: ${commands.length}`)
+
+// Validación final antes de enviar
+console.log('\n🔍 Validando comandos antes de registrar...')
+for (let i = 0; i < commands.length; i++) {
+  const cmd = commands[i]
+  console.log(`  [${i}] ${cmd.name} - description: "${cmd.description}"`)
+  if (!cmd.description || cmd.description.length === 0) {
+    console.error(`  ❌ ERROR: Comando ${cmd.name} tiene description vacío o undefined!`)
+    process.exit(1)
+  }
+}
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || process.env.DISCORD_TOKEN)
 const clientId = process.env.CLIENT_ID || '1199449712827318312'
