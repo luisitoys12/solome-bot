@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= guild.name %> - Configuración</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>Solome Bot</span>
+            </div>
+            <div class="nav-links">
+                <span class="user-info">
+                    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="Avatar" class="avatar-small">
+                    <%= user.username %>
+                </span>
+                <a href="/dashboard" class="btn btn-outline">Mis Servidores</a>
+                <a href="/logout" class="btn btn-outline">Salir</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="server-header">
+                <% if (guild.icon) { %>
+                    <img src="<%= guild.iconURL({ dynamic: true }) %>" alt="<%= guild.name %>" class="server-icon">
+                <% } else { %>
+                    <div class="server-initials"><%= guild.name.substring(0, 2).toUpperCase() %></div>
+                <% } %>
+                <h3><%= guild.name %></h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active"><a href="#general"><i class="fas fa-cog"></i> General</a></li>
+                <li><a href="#music"><i class="fas fa-music"></i> Música</a></li>
+                <li><a href="#radio"><i class="fas fa-broadcast-tower"></i> Radio</a></li>
+                <li><a href="#moderation"><i class="fas fa-shield-alt"></i> Moderación</a></li>
+                <li><a href="#entertainment"><i class="fas fa-gamepad"></i> Entretenimiento</a></li>
+                <li><a href="#logs"><i class="fas fa-file-alt"></i> Registros</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <h1>⚙️ Configuración del Servidor</h1>
+            
+            <section id="general" class="config-section">
+                <div class="section-header">
+                    <h2>🔧 Configuración General</h2>
+                    <button class="btn btn-success" onclick="saveConfig('general')">Guardar cambios</button>
+                </div>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>
+                            <i class="fas fa-language"></i> Idioma
+                            <select class="form-control">
+                                <option value="es" selected>Español</option>
+                                <option value="en">English</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <i class="fas fa-at"></i> Prefijo de comandos
+                            <input type="text" class="form-control" value="!" placeholder="!">
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section id="music" class="config-section">
+                <div class="section-header">
+                    <h2>🎵 Configuración de Música</h2>
+                    <button class="btn btn-success" onclick="saveConfig('music')">Guardar cambios</button>
+                </div>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" class="toggle" checked>
+                            <span>Módulo de música activado</span>
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <i class="fas fa-volume-up"></i> Volumen predeterminado
+                            <input type="range" class="form-range" min="0" max="100" value="50">
+                            <span class="range-value">50%</span>
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" class="toggle" checked>
+                            <span>Anuncios de reproducción</span>
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" class="toggle">
+                            <span>Solo DJs pueden controlar música</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section id="radio" class="config-section">
+                <div class="section-header">
+                    <h2>📻 Configuración de Radio</h2>
+                    <button class="btn btn-success" onclick="saveConfig('radio')">Guardar cambios</button>
+                </div>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" class="toggle" checked>
+                            <span>Módulo de radio activado</span>
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <i class="fas fa-broadcast-tower"></i> Calidad de stream
+                            <select class="form-control">
+                                <option value="high" selected>Alta (320kbps)</option>
+                                <option value="medium">Media (128kbps)</option>
+                                <option value="low">Baja (64kbps)</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section id="moderation" class="config-section">
+                <div class="section-header">
+                    <h2>🛡️ Configuración de Moderación</h2>
+                    <button class="btn btn-success" onclick="saveConfig('moderation')">Guardar cambios</button>
+                </div>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" class="toggle" checked>
+                            <span>Sistema de moderación activado</span>
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <i class="fas fa-hashtag"></i> Canal de logs
+                            <select class="form-control">
+                                <option value="">Seleccionar canal...</option>
+                                <% Array.from(guild.channels.cache.filter(c => c.type === 0).values()).forEach(channel => { %>
+                                    <option value="<%= channel.id %>"><%= channel.name %></option>
+                                <% }) %>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function saveConfig(section) {
+            fetch(`/api/guild/<%= guild.id %>/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('✅ Configuración guardada exitosamente')
+            })
+            .catch(err => {
+                alert('❌ Error al guardar la configuración')
+                console.error(err)
+            })
+        }
+
+        // Range slider value display
+        document.querySelectorAll('.form-range').forEach(range => {
+            const valueDisplay = range.nextElementSibling
+            range.addEventListener('input', () => {
+                valueDisplay.textContent = range.value + '%'
+            })
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Solome Bot</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>Solome Bot</span>
+            </div>
+            <div class="nav-links">
+                <span class="user-info">
+                    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="Avatar" class="avatar-small">
+                    <%= user.username %>
+                </span>
+                <a href="/" class="btn btn-outline">Inicio</a>
+                <a href="/logout" class="btn btn-outline">Salir</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <h3><i class="fas fa-tachometer-alt"></i> Panel de Control</h3>
+            <ul class="sidebar-menu">
+                <li class="active"><a href="/dashboard"><i class="fas fa-home"></i> Mis Servidores</a></li>
+                <li><a href="#stats"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
+                <li><a href="#commands"><i class="fas fa-terminal"></i> Comandos</a></li>
+                <li><a href="#premium"><i class="fas fa-crown"></i> Premium</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <h1>🏠 Mis Servidores</h1>
+            <p class="subtitle">Selecciona un servidor para gestionar su configuración</p>
+
+            <% if (guilds && guilds.length > 0) { %>
+                <div class="guilds-grid">
+                    <% guilds.forEach(guild => { %>
+                        <a href="/dashboard/<%= guild.id %>" class="guild-card">
+                            <div class="guild-icon">
+                                <% if (guild.icon) { %>
+                                    <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png" alt="<%= guild.name %>">
+                                <% } else { %>
+                                    <div class="guild-initials"><%= guild.name.substring(0, 2).toUpperCase() %></div>
+                                <% } %>
+                            </div>
+                            <div class="guild-info">
+                                <h3><%= guild.name %></h3>
+                                <p><i class="fas fa-cog"></i> Administrar servidor</p>
+                            </div>
+                            <div class="guild-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-server fa-4x"></i>
+                    <h3>No tienes servidores con Solome Bot</h3>
+                    <p>Invita al bot a tu servidor para comenzar</p>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=<%= bot.user.id %>&permissions=8&scope=bot%20applications.commands" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Invitar Bot
+                    </a>
+                </div>
+            <% } %>
+
+            <section id="stats" class="dashboard-section">
+                <h2>📊 Estadísticas Globales</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-server"></i>
+                        <div class="stat-value"><%= bot.guilds.cache.size %></div>
+                        <div class="stat-label">Servidores Totales</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-value"><%= bot.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0).toLocaleString() %></div>
+                        <div class="stat-label">Usuarios Alcanzados</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-music"></i>
+                        <div class="stat-value">50+</div>
+                        <div class="stat-label">Comandos</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-radio"></i>
+                        <div class="stat-value">200K+</div>
+                        <div class="stat-label">Estaciones</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

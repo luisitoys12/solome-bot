@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solome Bot - Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>Solome Bot</span>
+            </div>
+            <div class="nav-links">
+                <% if (user) { %>
+                    <a href="/dashboard" class="btn btn-primary">Dashboard</a>
+                    <a href="/logout" class="btn btn-outline">Cerrar sesión</a>
+                <% } else { %>
+                    <a href="/login" class="btn btn-primary">Iniciar sesión con Discord</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <h1>🎵 Solome Bot Dashboard</h1>
+            <p class="hero-subtitle">Bot de Música y Radio Profesional para Discord</p>
+            <p class="hero-description">Gestiona tu servidor, configura comandos y personaliza la experiencia musical</p>
+            
+            <% if (!user) { %>
+                <a href="/login" class="btn btn-large btn-primary">
+                    <i class="fab fa-discord"></i> Iniciar con Discord
+                </a>
+            <% } else { %>
+                <a href="/dashboard" class="btn btn-large btn-primary">
+                    <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+                </a>
+            <% } %>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>✨ Características Principales</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-music fa-3x"></i>
+                    <h3>Música Ilimitada</h3>
+                    <p>Reproduce desde YouTube, Spotify, Apple Music y más</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-broadcast-tower fa-3x"></i>
+                    <h3>200,000+ Radios</h3>
+                    <p>Acceso a estaciones de todo el mundo en alta calidad</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-sliders-h fa-3x"></i>
+                    <h3>Panel de Control</h3>
+                    <p>Configura todo desde un dashboard intuitivo</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-gamepad fa-3x"></i>
+                    <h3>Entretenimiento</h3>
+                    <p>Juegos interactivos y comandos divertidos</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-shield-alt fa-3x"></i>
+                    <h3>Moderación</h3>
+                    <p>Herramientas completas para gestionar tu servidor</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line fa-3x"></i>
+                    <h3>Estadísticas</h3>
+                    <p>Analiza el uso y rendimiento en tiempo real</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <% if (bot) { %>
+    <section class="stats">
+        <div class="container">
+            <h2>📊 Estadísticas en Vivo</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-server"></i>
+                    <div class="stat-value"><%= bot.guilds.cache.size %></div>
+                    <div class="stat-label">Servidores</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <div class="stat-value"><%= bot.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0).toLocaleString() %></div>
+                    <div class="stat-label">Usuarios</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-hashtag"></i>
+                    <div class="stat-value"><%= bot.channels.cache.size %></div>
+                    <div class="stat-label">Canales</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-signal"></i>
+                    <div class="stat-value"><%= bot.ws.ping %>ms</div>
+                    <div class="stat-label">Latencia</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <% } %>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Solome Bot - EstacionKusTV. Todos los derechos reservados.</p>
+            <p>Versión 4.0 con Dashboard</p>
+        </div>
+    </footer>
+</body>
+</html>
