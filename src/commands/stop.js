@@ -1,11 +1,12 @@
 const Command = require('../structures/command.js')
+const { EmbedBuilder } = require('discord.js')
 
 module.exports = class Stop extends Command {
   constructor (client) {
     super(client, {
       name: 'stop',
-      aliases: ['disconnect', 'dc', 'leave', 'parar'],
-      description: 'Detiene la música y limpia la cola'
+      aliases: ['parar', 'disconnect'],
+      description: 'Detiene la música y desconecta el bot del canal de voz'
     })
   }
 
@@ -21,12 +22,19 @@ module.exports = class Stop extends Command {
     const player = this.client.lavalink.getPlayer(interaction.guild.id)
 
     if (!player) {
-      return interaction.reply({ content: '❌ No hay música reproduciéndose.', ephemeral: true })
+      return interaction.reply({ content: '❌ No hay nada reproduciéndose.', ephemeral: true })
     }
 
     await player.destroy()
 
-    await interaction.reply('⏹️ Música detenida y cola limpiada.')
+    const embed = new EmbedBuilder()
+      .setColor(0xff0000)
+      .setTitle('⏹️ Reproducción Detenida')
+      .setDescription('La música se ha detenido y el bot se ha desconectado.')
+      .setFooter({ text: `Detenido por ${interaction.user.tag}` })
+      .setTimestamp()
+
+    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {

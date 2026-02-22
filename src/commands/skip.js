@@ -1,11 +1,12 @@
 const Command = require('../structures/command.js')
+const { EmbedBuilder } = require('discord.js')
 
 module.exports = class Skip extends Command {
   constructor (client) {
     super(client, {
       name: 'skip',
-      aliases: ['s', 'next', 'saltar'],
-      description: 'Salta a la siguiente canción en la cola'
+      aliases: ['s', 'saltar'],
+      description: 'Salta la canción actual y reproduce la siguiente'
     })
   }
 
@@ -20,15 +21,21 @@ module.exports = class Skip extends Command {
 
     const player = this.client.lavalink.getPlayer(interaction.guild.id)
 
-    if (!player || !player.queue.current) {
-      return interaction.reply({ content: '❌ No hay música reproduciéndose.', ephemeral: true })
+    if (!player || !player.playing) {
+      return interaction.reply({ content: '❌ No hay nada reproduciéndose.', ephemeral: true })
     }
 
     const currentTrack = player.queue.current
-
     await player.skip()
 
-    await interaction.reply(`⏭️ Saltado: **${currentTrack.info.title}**`)
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle('⏭️ Canción Saltada')
+      .setDescription(`**${currentTrack.info.title}** - ${currentTrack.info.author}`)
+      .setFooter({ text: `Saltado por ${interaction.user.tag}` })
+      .setTimestamp()
+
+    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {

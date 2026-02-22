@@ -6,7 +6,7 @@ module.exports = class Queue extends Command {
     super(client, {
       name: 'queue',
       aliases: ['q', 'cola'],
-      description: 'Muestra la cola de reproducción actual'
+      description: 'Muestra la cola de reproducción actual de música'
     })
   }
 
@@ -17,49 +17,34 @@ module.exports = class Queue extends Command {
 
     const player = this.client.lavalink.getPlayer(interaction.guild.id)
 
-    if (!player || !player.queue.current) {
-      return interaction.reply({ content: '❌ No hay música reproduciéndose.', ephemeral: true })
+    if (!player || !player.queue || player.queue.tracks.length === 0) {
+      return interaction.reply({ content: '❌ No hay canciones en la cola.', ephemeral: true })
     }
 
     const current = player.queue.current
     const queue = player.queue.tracks
+    const queueList = queue.slice(0, 10).map((track, i) => 
+      `${i + 1}. **${track.info.title}** - ${track.info.author}`
+    ).join('\n')
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle('🎵 Cola de Reproducción')
-      .setDescription(
-        `**Reproduciendo ahora:**\n` +
-        `[${current.info.title}](${current.info.uri || 'https://discord.com'})\n` +
-        `👤 ${current.info.author} • ⏱️ ${this.formatDuration(current.info.duration)}`
+      .setTitle('🎶 Cola de Reproducción')
+      .setDescription(`**▶️ Reproduciendo:**\n${current.info.title} - ${current.info.author}\n\n**Próximas canciones:**\n${queueList || 'No hay más canciones'}`)
+      .addFields(
+        { name: '📊 Total', value: `${queue.length} canciones`, inline: true },
+        { name: '⏱️ Duración', value: this.formatQueueDuration(queue), inline: true }
       )
-      .setThumbnail(current.info.artworkUrl || null)
-      .setFooter({ text: `${queue.length} canciones en cola` })
+      .setFooter({ text: `Solicitado por ${interaction.user.tag}` })
       .setTimestamp()
-
-    if (queue.length > 0) {
-      const upcoming = queue.slice(0, 10).map((track, i) => 
-        `**${i + 1}.** [${track.info.title}](${track.info.uri || 'https://discord.com'}) - \`${this.formatDuration(track.info.duration)}\``
-      ).join('\n')
-
-      embed.addFields({ name: 'Próximas canciones', value: upcoming })
-
-      if (queue.length > 10) {
-        embed.addFields({ name: '\u200b', value: `*...y ${queue.length - 10} canciones más*` })
-      }
-    }
 
     await interaction.reply({ embeds: [embed] })
   }
 
-  formatDuration(ms) {
-    const seconds = Math.floor((ms / 1000) % 60)
-    const minutes = Math.floor((ms / (1000 * 60)) % 60)
-    const hours = Math.floor(ms / (1000 * 60 * 60))
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    }
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  formatQueueDuration(queue) {
+    const totalMs = queue.reduce((acc, track) => acc + track.info.duration, 0)
+    const minutes = Math.floor(totalMs / 60000)
+    return `${minutes} minutos`
   }
 
   getSlashCommandData() {
