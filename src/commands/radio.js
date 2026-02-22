@@ -49,7 +49,6 @@ module.exports = class Radio extends Command {
       // Buscar en TuneIn
       if (source === 'all' || source === 'tunein') {
         try {
-          // TuneIn API - Búsqueda de estaciones
           const tuneinResponse = await axios.get('http://opml.radiotime.com/Search.ashx', {
             params: {
               query: query,
@@ -83,7 +82,6 @@ module.exports = class Radio extends Command {
       // Buscar en MyTuner
       if (source === 'all' || source === 'mytuner') {
         try {
-          // MyTuner Radio API
           const mytunerResponse = await axios.get('https://de1.api.radio-browser.info/json/stations/search', {
             params: {
               name: query,
@@ -172,9 +170,7 @@ module.exports = class Radio extends Command {
             if (station.source === 'iHeartRadio') {
               streamUrl = await iheartStreamURL(station.data)
             } else if (station.source === 'TuneIn') {
-              // TuneIn - obtener URL de stream
               if (station.url) {
-                // Si la URL es un playlist, obtener el stream real
                 try {
                   const streamResponse = await axios.get(station.url)
                   if (streamResponse.data && streamResponse.data.body && streamResponse.data.body[0]) {
@@ -187,7 +183,6 @@ module.exports = class Radio extends Command {
                 }
               }
             } else if (station.source === 'MyTuner') {
-              // MyTuner - URL directa
               streamUrl = station.url
             }
 
@@ -250,6 +245,33 @@ module.exports = class Radio extends Command {
     } catch (error) {
       this.client.log('error', error)
       await interaction.editReply('❌ Error al buscar estaciones de radio.')
+    }
+  }
+
+  getSlashCommandData() {
+    return {
+      name: this.name,
+      description: this.description,
+      options: [
+        {
+          type: 3, // STRING
+          name: 'estacion',
+          description: 'Nombre de la estación de radio',
+          required: true
+        },
+        {
+          type: 3, // STRING
+          name: 'fuente',
+          description: 'Fuente de búsqueda',
+          required: false,
+          choices: [
+            { name: 'Todas las fuentes', value: 'all' },
+            { name: 'iHeartRadio', value: 'iheart' },
+            { name: 'TuneIn', value: 'tunein' },
+            { name: 'MyTuner', value: 'mytuner' }
+          ]
+        }
+      ]
     }
   }
 }
