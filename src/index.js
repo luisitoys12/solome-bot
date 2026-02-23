@@ -55,7 +55,6 @@ async function autoRegisterCommands() {
         if (typeof commandInstance.getSlashCommandData === 'function') {
           const commandData = commandInstance.getSlashCommandData()
           
-          // Validar que tenga description
           if (commandData && commandData.name && commandData.description && commandData.description.length > 0) {
             commands.push(commandData)
           }
@@ -119,7 +118,7 @@ if (fs.existsSync(commandsPath)) {
         }
       }
     } catch (error) {
-      // Ignorar errores
+      // Ignorar
     }
   }
   
@@ -155,8 +154,19 @@ client.once('clientReady', async () => {
   client.log('info', `🏠 En ${client.guilds.cache.size} servidores`)
   client.log('info', `👥 Viendo ${client.users.cache.size} usuarios`)
   
-  // AUTO-REGISTER AUTOMÁTICO AL INICIAR
+  // AUTO-REGISTER AUTOMÁTICO
   await autoRegisterCommands()
+  
+  // INICIAR DASHBOARD WEB
+  try {
+    const dashboardPath = path.join(__dirname, '../dashboard/server.js')
+    if (fs.existsSync(dashboardPath)) {
+      const { startDashboard } = require(dashboardPath)
+      startDashboard(client)
+    }
+  } catch (error) {
+    client.log('warn', 'No se pudo iniciar dashboard:', error.message)
+  }
   
   // Establecer estado
   client.user.setPresence({
@@ -240,3 +250,6 @@ process.on('SIGTERM', () => {
   client.destroy()
   process.exit(0)
 })
+
+// Exportar cliente para el dashboard
+module.exports = client
