@@ -1,4 +1,4 @@
-// Sistema completo de manejo de botones para RADIO LOCAL
+// Sistema completo de manejo de botones - RADIO + MÚSICA
 const { EmbedBuilder } = require('discord.js')
 
 class ButtonHandler {
@@ -9,7 +9,18 @@ class ButtonHandler {
   }
 
   registerHandlers() {
-    // Radio buttons
+    // Music buttons (Lavalink)
+    this.register('music_pause', this.handleMusicPause.bind(this))
+    this.register('music_resume', this.handleMusicResume.bind(this))
+    this.register('music_skip', this.handleMusicSkip.bind(this))
+    this.register('music_stop', this.handleMusicStop.bind(this))
+    this.register('music_queue', this.handleMusicQueue.bind(this))
+    this.register('music_shuffle', this.handleMusicShuffle.bind(this))
+    this.register('music_loop', this.handleMusicLoop.bind(this))
+    this.register('music_volume_up', this.handleMusicVolumeUp.bind(this))
+    this.register('music_volume_down', this.handleMusicVolumeDown.bind(this))
+    
+    // Radio buttons (Local)
     this.register('radio_stop', this.handleRadioStop.bind(this))
     this.register('radio_volume_up', this.handleRadioVolumeUp.bind(this))
     this.register('radio_volume_down', this.handleRadioVolumeDown.bind(this))
@@ -69,7 +80,155 @@ class ButtonHandler {
     return false
   }
 
-  // ==================== RADIO HANDLERS ====================
+  // ==================== MUSIC HANDLERS (LAVALINK) ====================
+  
+  async handleMusicPause(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player || !player.queue.current) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    if (player.paused) {
+      return interaction.reply({ content: '❌ La música ya está pausada', flags: 64 })
+    }
+    
+    player.pause(true)
+    await interaction.reply({ content: '⏸️ Música pausada', flags: 64 })
+  }
+
+  async handleMusicResume(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    if (!player.paused) {
+      return interaction.reply({ content: '❌ La música no está pausada', flags: 64 })
+    }
+    
+    player.pause(false)
+    await interaction.reply({ content: '▶️ Música reanudada', flags: 64 })
+  }
+
+  async handleMusicSkip(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player || !player.queue.current) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    const track = player.queue.current
+    player.stop()
+    
+    await interaction.reply({ content: `⏭️ Saltando: **${track.title}**`, flags: 64 })
+  }
+
+  async handleMusicStop(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    player.destroy()
+    await interaction.reply({ content: '⏹️ Música detenida y bot desconectado', flags: 64 })
+  }
+
+  async handleMusicQueue(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player || !player.queue.current) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    const current = player.queue.current
+    const queue = player.queue.slice(0, 10)
+    
+    const embed = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle('📜 Cola de Reproducción')
+      .setDescription(
+        `**▶️ Reproduciendo:**\n` +
+        `[${current.title}](${current.uri}) - \`${this.formatDuration(current.duration)}\`\n` +
+        `Solicitado por: <@${current.requester.id}>\n\n` +
+        (queue.length > 0 ? `**📊 Próximas ${queue.length}:**\n` +
+        queue.map((t, i) => `${i + 1}. [${t.title}](${t.uri}) - \`${this.formatDuration(t.duration)}\``).join('\n') : '🚨 Cola vacía')
+      )
+      .addFields(
+        { name: '📋 Total', value: `${player.queue.size} canciones`, inline: true },
+        { name: '⏱️ Duración', value: this.formatDuration(player.queue.duration), inline: true },
+        { name: '🔁 Loop', value: player.trackRepeat ? 'Canción' : player.queueRepeat ? 'Cola' : 'Off', inline: true }
+      )
+      .setFooter({ text: `Mostrando máximo 10 canciones | Node: ${player.node.options.identifier}` })
+    
+    await interaction.reply({ embeds: [embed], flags: 64 })
+  }
+
+  async handleMusicShuffle(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    if (player.queue.size < 2) {
+      return interaction.reply({ content: '❌ Necesitas al menos 2 canciones', flags: 64 })
+    }
+    
+    player.queue.shuffle()
+    await interaction.reply({ content: `🔀 Cola mezclada (${player.queue.size} canciones)`, flags: 64 })
+  }
+
+  async handleMusicLoop(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    // Cycle: Off -> Track -> Queue -> Off
+    if (!player.trackRepeat && !player.queueRepeat) {
+      player.setTrackRepeat(true)
+      await interaction.reply({ content: '🔂 Loop de canción activado', flags: 64 })
+    } else if (player.trackRepeat) {
+      player.setTrackRepeat(false)
+      player.setQueueRepeat(true)
+      await interaction.reply({ content: '🔁 Loop de cola activado', flags: 64 })
+    } else {
+      player.setQueueRepeat(false)
+      await interaction.reply({ content: '❌ Loop desactivado', flags: 64 })
+    }
+  }
+
+  async handleMusicVolumeUp(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    const newVolume = Math.min(player.volume + 10, 150)
+    player.setVolume(newVolume)
+    
+    await interaction.reply({ content: `🔊 Volumen: **${newVolume}%**`, flags: 64 })
+  }
+
+  async handleMusicVolumeDown(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    const newVolume = Math.max(player.volume - 10, 0)
+    player.setVolume(newVolume)
+    
+    await interaction.reply({ content: `🔉 Volumen: **${newVolume}%**`, flags: 64 })
+  }
+
+  // ==================== RADIO HANDLERS (LOCAL) ====================
   
   async handleRadioStop(interaction) {
     const radioCommand = this.client.slashCommands.get('radio')
@@ -177,6 +336,18 @@ class ButtonHandler {
 
   // ==================== UTILITY ====================
   
+  formatDuration(ms) {
+    if (!ms || ms === 0) return '0:00'
+    const seconds = Math.floor((ms / 1000) % 60)
+    const minutes = Math.floor((ms / (1000 * 60)) % 60)
+    const hours = Math.floor(ms / (1000 * 60 * 60))
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
   formatUptime(ms) {
     const seconds = Math.floor((ms / 1000) % 60)
     const minutes = Math.floor((ms / (1000 * 60)) % 60)
