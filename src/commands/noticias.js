@@ -2,10 +2,8 @@ const Command = require('../structures/command.js')
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js')
 const axios = require('axios')
 
-// Usar APIs de noticias más confiables
-const NEWS_API_KEY = process.env.NEWS_API_KEY || null // Opcional: newsapi.org (gratis 100 req/día)
+const NEWS_API_KEY = process.env.NEWS_API_KEY || null
 
-// Fuentes RSS confiables y actualizadas
 const RSS_FEEDS = {
   general: [
     { name: 'CNN Español', url: 'https://cnnespanol.cnn.com/feed/', emoji: '🌎' },
@@ -45,24 +43,20 @@ module.exports = class Noticias extends Command {
     try {
       let noticias = []
       
-      // Intentar usar NewsAPI si está disponible (más confiable)
       if (NEWS_API_KEY) {
         noticias = await this.fetchNewsAPI(categoria, cantidad)
       }
       
-      // Fallback a RSS si NewsAPI no está disponible o falla
       if (noticias.length === 0) {
         noticias = await this.fetchRSS(categoria, cantidad)
       }
       
       if (noticias.length === 0) {
+        // ❌ Mensaje amigable sin detalles técnicos
         return interaction.editReply(
-          '❌ No se pudieron obtener noticias en este momento.\n\n' +
-          '🛠️ **Posibles causas:**\n' +
-          '• Las fuentes RSS están caídas temporalmente\n' +
-          '• Problemas de conexión con los servidores de noticias\n' +
-          '• Rate limit alcanzado\n\n' +
-          '⏰ Intenta de nuevo en unos minutos.'
+          '❌ No pudimos obtener noticias en este momento.\n\n' +
+          '🔄 **Intenta de nuevo en unos minutos.**\n' +
+          'Las fuentes de noticias pueden estar temporalmente no disponibles.'
         )
       }
 
@@ -76,7 +70,6 @@ module.exports = class Noticias extends Command {
         .setFooter({ text: 'EstacionKusTV • SOLOME Bot' })
         .setTimestamp()
 
-      // Añadir noticias
       noticias.forEach((noticia, index) => {
         const numero = index + 1
         embed.addFields({
@@ -94,10 +87,11 @@ module.exports = class Noticias extends Command {
 
     } catch (error) {
       this.client.log('error', 'Error en noticias:', error)
+      
+      // ❌ Mensaje amigable sin stack trace
       await interaction.editReply(
-        '❌ Error al obtener noticias.\n' +
-        '```' + error.message + '```\n' +
-        'Intenta de nuevo en unos momentos.'
+        '❌ Error al cargar noticias.\n\n' +
+        '🔄 Inténtalo de nuevo en unos momentos.'
       )
     }
   }
@@ -140,14 +134,11 @@ module.exports = class Noticias extends Command {
     const feeds = RSS_FEEDS[categoria] || RSS_FEEDS.general
     const allNews = []
     
-    // Intentar obtener de cada feed
     for (const feed of feeds) {
       try {
         const response = await axios.get(feed.url, {
           timeout: 8000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; SolomeBot/4.0)'
-          }
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SolomeBot/4.0)' }
         })
         
         const items = this.parseRSS(response.data)
@@ -161,17 +152,14 @@ module.exports = class Noticias extends Command {
           })
         })
         
-        // Si ya tenemos suficientes, parar
         if (allNews.length >= cantidad) break
         
       } catch (error) {
         this.client.log('warn', `❌ ${feed.name} falló: ${error.message}`)
-        // Continuar con el siguiente feed
         continue
       }
     }
     
-    // Ordenar por fecha y limitar cantidad
     return allNews
       .sort((a, b) => b.date - a.date)
       .slice(0, cantidad)
@@ -179,8 +167,6 @@ module.exports = class Noticias extends Command {
 
   parseRSS(xml) {
     const items = []
-    
-    // Regex para parsear RSS/Atom
     const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>|<entry[^>]*>([\s\S]*?)<\/entry>/g
     const titleRegex = /<title><!\[CDATA\[([^\]]+)\]\]><\/title>|<title>([^<]+)<\/title>/
     const linkRegex = /<link[^>]*>([^<]+)<\/link>|<link[^>]*href=["']([^"']+)["']/
@@ -202,7 +188,6 @@ module.exports = class Noticias extends Command {
         const description = this.cleanText(descMatch ? (descMatch[1] || descMatch[2] || descMatch[3] || '') : '')
         const date = dateMatch ? new Date(dateMatch[1] || dateMatch[2] || dateMatch[3]) : new Date()
         
-        // Validar que tenga datos mínimos
         if (title && title.length > 5 && url) {
           items.push({ title, url, description, date })
         }

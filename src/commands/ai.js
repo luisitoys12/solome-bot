@@ -39,7 +39,6 @@ module.exports = class AI extends Command {
       let respuesta
       
       if (config.provider === 'free' || !config.apiKey) {
-        // ✅ Usar API GRATUITA (Hugging Face Inference API)
         respuesta = await this.chatFree(pregunta)
       } else if (config.provider === 'openai') {
         respuesta = await this.chatOpenAI(pregunta, config.apiKey)
@@ -63,39 +62,38 @@ module.exports = class AI extends Command {
       await interaction.editReply({ embeds: [embed] })
       
     } catch (error) {
-      this.client.log('error', 'Error en AI:', error.message)
+      this.client.log('error', 'Error en AI:', error)
+      
+      // ❌ NO mostrar error técnico al usuario
       await interaction.editReply(
-        '❌ Error al contactar con la IA.\n' +
-        '```' + error.message + '```\n' +
-        'Intenta de nuevo o contacta con los administradores.'
+        '❌ No pude procesar tu pregunta en este momento.\n\n' +
+        '💭 **Intenta:**\n' +
+        '• Reformular tu pregunta\n' +
+        '• Intentar de nuevo en unos segundos\n' +
+        '• Contactar a los administradores si persiste'
       )
     }
   }
 
   async chatFree(pregunta) {
-    // Usar HuggingFace Inference API (GRATIS)
     try {
       const response = await axios.post(
         'https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill',
         { inputs: pregunta },
         {
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           timeout: 15000
         }
       )
       
       return response.data[0]?.generated_text || 'No pude generar una respuesta.'
     } catch (error) {
-      // Fallback: respuesta simple si HF falla
       this.client.log('warn', 'HuggingFace API falló, usando fallback')
       
-      // Respuestas básicas
       const respuestas = [
-        'Esa es una pregunta interesante. Podrías reformularla?',
-        'Entiendo tu pregunta. Intenta ser más específico.',
-        'Actualmente el servicio gratuito de IA está sobrecargado. Intenta en unos minutos.'
+        'Esa es una pregunta interesante. Podrías ser más específico?',
+        'Entiendo tu pregunta. Inténtalo de otra forma.',
+        'El servicio de IA está ocupado. Intenta en unos minutos.'
       ]
       return respuestas[Math.floor(Math.random() * respuestas.length)]
     }
@@ -126,7 +124,6 @@ module.exports = class AI extends Command {
   }
 
   async config(interaction) {
-    // Solo administradores
     if (!interaction.member.permissions.has('Administrator')) {
       return interaction.reply({ 
         content: '❌ Solo administradores pueden configurar la IA.',
