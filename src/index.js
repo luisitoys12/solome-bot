@@ -1,8 +1,9 @@
-// SOLOME Bot - Main Entry Point (SIN LAVALINK - Sistema Local)
+// SOLOME Bot - Main Entry Point
 require('dotenv').config()
 const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js')
 const fs = require('fs')
 const path = require('path')
+const LavalinkManager = require('./utils/lavalink.js')
 
 // Crear cliente de Discord
 const client = new Client({
@@ -89,11 +90,24 @@ client.once('ready', () => {
   
   // Actualizar presencia
   client.user.setPresence({
-    activities: [{ name: '/help | BabaRadio & EstacionKusTV', type: 2 }],
+    activities: [{ name: '/play | BabaRadio & EstacionKusTV', type: 2 }],
     status: 'online'
   })
   
-  client.log('success', '🎵 Sistema de Radio y Música LOCAL listo')
+  // Inicializar Lavalink Manager
+  try {
+    const lavalinkManager = new LavalinkManager(client)
+    client.manager = lavalinkManager.init()
+    client.manager.init(client.user.id)
+    
+    client.log('success', '🎵 Lavalink Manager inicializado (Local + Públicos)')
+    client.log('info', `🔗 Intentando conectar a ${client.manager.nodes.size} nodos...`)
+  } catch (error) {
+    client.log('error', 'Error inicializando Lavalink:', error)
+    client.log('warn', '⚠️  Comandos de música no disponibles')
+  }
+  
+  client.log('success', '📻 Sistema de Radio LOCAL listo')
   
   // Registrar comandos slash globalmente
   registerSlashCommands()
@@ -111,11 +125,18 @@ async function registerSlashCommands() {
   
   try {
     await client.application.commands.set(commands)
-    client.log('success', `✅ ${commands.length} comandos slash registrados globalmente`)
+    client.log('success', `✅ ${commands.length} comandos slash registrados`)
   } catch (error) {
     client.log('error', 'Error registrando comandos slash:', error)
   }
 }
+
+// Manejar raw events para Lavalink
+client.on('raw', d => {
+  if (client.manager) {
+    client.manager.updateVoiceState(d)
+  }
+})
 
 // Manejo de errores
 process.on('unhandledRejection', error => {

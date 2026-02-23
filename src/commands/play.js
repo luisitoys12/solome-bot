@@ -23,9 +23,17 @@ module.exports = class Play extends Command {
     // Verificar que Lavalink esté disponible
     if (!this.client.manager) {
       return interaction.editReply(
-        '❌ El sistema de música no está disponible.\n\n' +
-        '🛠️ **Para administradores:**\n' +
-        'Asegúrate de que Lavalink esté corriendo en el servidor.'
+        '❌ Sistema de música no disponible.\n\n' +
+        '🛠️ **Administradores:** Verifica que Lavalink esté corriendo en el servidor.'
+      )
+    }
+    
+    // Verificar que al menos un nodo esté conectado
+    const connectedNodes = [...this.client.manager.nodes.values()].filter(n => n.connected)
+    if (connectedNodes.length === 0) {
+      return interaction.editReply(
+        '❌ No hay nodos de Lavalink conectados.\n' +
+        '⏳ Intenta de nuevo en unos segundos...'
       )
     }
     
@@ -39,7 +47,7 @@ module.exports = class Play extends Command {
           voiceChannel: interaction.member.voice.channel.id,
           textChannel: interaction.channel.id,
           selfDeafen: true,
-          volume: 100
+          volume: 75
         })
       }
       
@@ -51,12 +59,8 @@ module.exports = class Play extends Command {
       // Buscar canción
       const res = await player.search(query, interaction.user)
       
-      if (res.loadType === 'NO_MATCHES') {
-        return interaction.editReply('❌ No se encontraron resultados para tu búsqueda')
-      }
-      
-      if (res.loadType === 'LOAD_FAILED') {
-        return interaction.editReply('❌ Error al cargar la canción. Intenta de nuevo.')
+      if (res.loadType === 'NO_MATCHES' || res.loadType === 'LOAD_FAILED') {
+        return interaction.editReply('❌ No se encontraron resultados para: **' + query + '**')
       }
       
       // Si es una playlist
@@ -69,11 +73,13 @@ module.exports = class Play extends Command {
           .setDescription(`**${res.playlist.name}**`)
           .addFields(
             { name: '🎵 Canciones', value: `${res.tracks.length}`, inline: true },
-            { name: '⏱️ Duración', value: this.formatDuration(res.tracks.reduce((a, b) => a + b.duration, 0)), inline: true },
-            { name: '📜 Cola', value: `${player.queue.size} canciones`, inline: true }
+            { name: '⏱️ Duración total', value: this.formatDuration(res.tracks.reduce((a, b) => a + b.duration, 0)), inline: true },
+            { name: '📜 Posición en cola', value: `${player.queue.size} canciones`, inline: true }
           )
           .setThumbnail(res.tracks[0].displayThumbnail('default'))
-          .setFooter({ text: `Solicitado por ${interaction.user.tag}` })
+          .setFooter({ 
+            text: `Solicitado por ${interaction.user.tag} | Node: ${player.node.options.identifier}` 
+          })
           .setTimestamp()
         
         if (!player.playing && !player.paused) {
@@ -90,16 +96,18 @@ module.exports = class Play extends Command {
       const isPlaying = player.playing || player.paused
       
       const embed = new EmbedBuilder()
-        .setColor(0xFF0000)
+        .setColor(isPlaying ? 0x5865F2 : 0xFF0000)
         .setTitle(isPlaying ? '🎵 Añadido a la Cola' : '▶️ Reproduciendo Ahora')
         .setDescription(`**[${track.title}](${track.uri})**`)
         .addFields(
-          { name: '🎤 Artista', value: track.author, inline: true },
+          { name: '🎤 Artista', value: track.author || 'Desconocido', inline: true },
           { name: '⏱️ Duración', value: this.formatDuration(track.duration), inline: true },
-          { name: '📊 Posición', value: `#${player.queue.size}`, inline: true }
+          { name: '📊 Posición', value: isPlaying ? `#${player.queue.size}` : 'Reproduciendo', inline: true }
         )
         .setThumbnail(track.displayThumbnail('maxresdefault'))
-        .setFooter({ text: `Solicitado por ${interaction.user.tag}` })
+        .setFooter({ 
+          text: `Solicitado por ${interaction.user.tag} | Node: ${player.node.options.identifier}` 
+        })
         .setTimestamp()
       
       // Botones de control
@@ -130,10 +138,16 @@ module.exports = class Play extends Command {
             .setLabel('Ver Cola')
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId('music_lyrics')
-            .setEmoji('📝')
-            .setLabel('Letras')
+            .setCustomId('music_loop')
+            .setEmoji('🔁')
+            .setLabel('Loop')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('music_shuffle')
+            .setEmoji('🔀')
+            .setLabel('Mezclar')
             .setStyle(ButtonStyle.Secondary)
+            .setDisabled(player.queue.size < 2)
         )
       
       if (!player.playing && !player.paused) {
@@ -149,6 +163,7 @@ module.exports = class Play extends Command {
   }
 
   formatDuration(ms) {
+    if (!ms || ms === 0) return '0:00'
     const seconds = Math.floor((ms / 1000) % 60)
     const minutes = Math.floor((ms / (1000 * 60)) % 60)
     const hours = Math.floor(ms / (1000 * 60 * 60))
@@ -167,7 +182,7 @@ module.exports = class Play extends Command {
         {
           type: 3, // STRING
           name: 'cancion',
-          description: 'Nombre o URL de la canción (YouTube, Spotify, SoundCloud, etc.)',
+          description: 'Nombre o URL (YouTube, Spotify, SoundCloud, etc.)',
           required: true
         }
       ]
