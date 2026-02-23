@@ -1,9 +1,8 @@
-// SOLOME Bot - Main Entry Point
+// SOLOME Bot - Main Entry Point (SIN LAVALINK - Sistema Local)
 require('dotenv').config()
 const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js')
 const fs = require('fs')
 const path = require('path')
-const MusicManager = require('./utils/musicManager.js')
 
 // Crear cliente de Discord
 const client = new Client({
@@ -28,7 +27,7 @@ const client = new Client({
 client.slashCommands = new Collection()
 client.aliases = new Collection()
 
-// Logger
+// Logger mejorado
 client.log = (type, ...args) => {
   const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
   const types = {
@@ -82,7 +81,7 @@ for (const file of eventFiles) {
 
 client.log('success', `🎭 ${eventFiles.length} eventos cargados`)
 
-// Inicializar Lavalink cuando el bot esté listo
+// Evento Ready
 client.once('ready', () => {
   client.log('success', `🤖 Bot conectado como ${client.user.tag}`)
   client.log('info', `📊 Servidores: ${client.guilds.cache.size}`)
@@ -94,34 +93,7 @@ client.once('ready', () => {
     status: 'online'
   })
   
-  // Inicializar Music Manager con Lavalink
-  if (process.env.LAVALINK_HOST && process.env.LAVALINK_PORT) {
-    try {
-      const musicManager = new MusicManager(client)
-      
-      const nodes = [
-        {
-          identifier: 'Main',
-          host: process.env.LAVALINK_HOST || 'localhost',
-          port: parseInt(process.env.LAVALINK_PORT) || 2333,
-          password: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
-          secure: false,
-          retryAmount: 5,
-          retryDelay: 3000
-        }
-      ]
-      
-      client.manager = musicManager.init(nodes)
-      client.manager.init(client.user.id)
-      
-      client.log('success', '🎵 Music Manager inicializado')
-    } catch (error) {
-      client.log('error', 'Error inicializando Music Manager:', error)
-      client.log('warn', '⚠️  Los comandos de música no estarán disponibles')
-    }
-  } else {
-    client.log('warn', '⚠️  Lavalink no configurado en .env - comandos de música deshabilitados')
-  }
+  client.log('success', '🎵 Sistema de Radio y Música LOCAL listo')
   
   // Registrar comandos slash globalmente
   registerSlashCommands()
@@ -144,13 +116,6 @@ async function registerSlashCommands() {
     client.log('error', 'Error registrando comandos slash:', error)
   }
 }
-
-// Manejar raw events para Lavalink
-client.on('raw', d => {
-  if (client.manager) {
-    client.manager.updateVoiceState(d)
-  }
-})
 
 // Manejo de errores
 process.on('unhandledRejection', error => {

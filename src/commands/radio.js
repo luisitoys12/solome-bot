@@ -1,26 +1,80 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js')
+const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js')
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice')
-const axios = require('axios')
 
-// Estaciones de radio pre-configuradas
+// Estaciones de radio pre-configuradas (ACTUALIZADAS)
 const RADIO_STATIONS = {
-  // México
-  'babaradio': { url: 'https://stream.zeno.fm/YOUR_STREAM_URL', name: 'BabaRadio', emoji: '📻' },
-  'estacionkus': { url: 'https://stream.zeno.fm/YOUR_STREAM_URL', name: 'EstacionKusTV', emoji: '📺' },
-  'los40': { url: 'https://21293.live.streamtheworld.com/LOS40_MEXICO.mp3', name: 'Los 40 México', emoji: '🎵' },
-  'radiobeatmx': { url: 'https://stream.zeno.fm/8gprnu4r6chvv', name: 'Radio Beat MX', emoji: '🎸' },
+  // México - TUS ESTACIONES
+  'babaradio': { 
+    url: 'https://stream.zeno.fm/YOUR_BABARADIO_STREAM_ID', 
+    name: 'BabaRadio', 
+    emoji: '📻',
+    description: 'Radio oficial BabaRadio'
+  },
+  'estacionkus': { 
+    url: 'https://stream.zeno.fm/YOUR_ESTACIONKUS_STREAM_ID', 
+    name: 'EstacionKusTV', 
+    emoji: '📺',
+    description: 'Radio oficial EstacionKusTV'
+  },
+  'los40': { 
+    url: 'https://21293.live.streamtheworld.com/LOS40_MEXICO.mp3', 
+    name: 'Los 40 México', 
+    emoji: '🎵',
+    description: 'Top hits en español'
+  },
+  'radiobeatmx': { 
+    url: 'https://stream.zeno.fm/8gprnu4r6chvv', 
+    name: 'Radio Beat MX', 
+    emoji: '🎸',
+    description: 'Rock y alternativo'
+  },
   
   // Internacional
-  'bbc1': { url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one', name: 'BBC Radio 1', emoji: '🇬🇧' },
-  'kiss': { url: 'https://stream-mz.planetradio.co.uk/kissnational.mp3', name: 'Kiss FM', emoji: '💋' },
-  'capitalfm': { url: 'https://media-ice.musicradio.com/CapitalUK', name: 'Capital FM', emoji: '🎧' },
-  'power106': { url: 'https://stream.revma.ihrhls.com/zc233', name: 'Power 106 FM', emoji: '🔊' },
+  'bbc1': { 
+    url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one', 
+    name: 'BBC Radio 1', 
+    emoji: '🇬🇧',
+    description: 'Top hits internacionales'
+  },
+  'kiss': { 
+    url: 'https://stream-mz.planetradio.co.uk/kissnational.mp3', 
+    name: 'Kiss FM', 
+    emoji: '💋',
+    description: 'Hip-Hop y R&B'
+  },
+  'capitalfm': { 
+    url: 'https://media-ice.musicradio.com/CapitalUK', 
+    name: 'Capital FM', 
+    emoji: '🎧',
+    description: 'Pop y Dance'
+  },
   
   // Latam
-  'mega': { url: 'https://unlimited1-cl.dps.live/mega/aac/icecast.audio', name: 'Mega Chile', emoji: '🇨🇱' },
-  'rock101': { url: 'https://stream.zeno.fm/f3wvbbqmdg8uv', name: 'Rock & Pop Chile', emoji: '🤘' },
-  'disneyradio': { url: 'https://22363.live.streamtheworld.com/DISNEY_ARG.mp3', name: 'Disney Radio', emoji: '✨' }
+  'mega': { 
+    url: 'https://unlimited1-cl.dps.live/mega/aac/icecast.audio', 
+    name: 'Mega Chile', 
+    emoji: '🇨🇱',
+    description: 'Pop latino'
+  },
+  'rock101': { 
+    url: 'https://stream.zeno.fm/f3wvbbqmdg8uv', 
+    name: 'Rock & Pop', 
+    emoji: '🤘',
+    description: 'Rock clásico'
+  },
+  'disney': { 
+    url: 'https://22363.live.streamtheworld.com/DISNEY_ARG.mp3', 
+    name: 'Disney Radio', 
+    emoji: '✨',
+    description: 'Música Disney'
+  },
+  'lofi': {
+    url: 'https://streams.ilovemusic.de/iloveradio17.mp3',
+    name: 'Lofi Hip Hop',
+    emoji: '🎹',
+    description: 'Beats relajantes'
+  }
 }
 
 module.exports = class Radio extends Command {
@@ -38,14 +92,15 @@ module.exports = class Radio extends Command {
   async runSlash (interaction) {
     const subcommand = interaction.options.getSubcommand()
     
-    if (subcommand === 'play') {
-      await this.play(interaction)
-    } else if (subcommand === 'stop') {
-      await this.stop(interaction)
-    } else if (subcommand === 'lista') {
-      await this.lista(interaction)
-    } else if (subcommand === 'custom') {
-      await this.custom(interaction)
+    const actions = {
+      'play': () => this.play(interaction),
+      'stop': () => this.stop(interaction),
+      'lista': () => this.lista(interaction),
+      'custom': () => this.custom(interaction)
+    }
+    
+    if (actions[subcommand]) {
+      await actions[subcommand]()
     }
   }
 
@@ -58,12 +113,18 @@ module.exports = class Radio extends Command {
       return interaction.editReply('❌ Debes estar en un canal de voz primero')
     }
     
+    // Detener radio anterior si existe
+    const existing = this.connections.get(interaction.guild.id)
+    if (existing) {
+      existing.player.stop()
+      existing.connection.destroy()
+      this.connections.delete(interaction.guild.id)
+    }
+    
     const station = RADIO_STATIONS[estacion.toLowerCase()]
     
     if (!station) {
-      return interaction.editReply(
-        '❌ Estación no encontrada. Usa `/radio lista` para ver las disponibles.'
-      )
+      return interaction.editReply('❌ Estación no encontrada. Usa `/radio lista`')
     }
     
     try {
@@ -78,50 +139,109 @@ module.exports = class Radio extends Command {
       
       // Crear player
       const player = createAudioPlayer()
-      const resource = createAudioResource(station.url)
+      const resource = createAudioResource(station.url, {
+        inlineVolume: true
+      })
+      
+      // Configurar volumen inicial
+      resource.volume?.setVolume(0.5)
       
       connection.subscribe(player)
       player.play(resource)
       
       // Guardar conexión
-      this.connections.set(interaction.guild.id, { connection, player, station })
+      this.connections.set(interaction.guild.id, { 
+        connection, 
+        player, 
+        station,
+        resource,
+        startTime: Date.now()
+      })
       
       // Manejar eventos
-      connection.on(VoiceConnectionStatus.Disconnected, () => {
-        connection.destroy()
-        this.connections.delete(interaction.guild.id)
+      connection.on(VoiceConnectionStatus.Disconnected, async () => {
+        try {
+          await Promise.race([
+            once(connection, VoiceConnectionStatus.Signalling, { timeout: 5000 }),
+            once(connection, VoiceConnectionStatus.Connecting, { timeout: 5000 }),
+          ])
+        } catch (error) {
+          connection.destroy()
+          this.connections.delete(interaction.guild.id)
+        }
       })
       
       player.on(AudioPlayerStatus.Idle, () => {
         // Auto-reconectar si se detiene
-        const newResource = createAudioResource(station.url)
-        player.play(newResource)
+        const data = this.connections.get(interaction.guild.id)
+        if (data) {
+          const newResource = createAudioResource(station.url, { inlineVolume: true })
+          newResource.volume?.setVolume(0.5)
+          player.play(newResource)
+          data.resource = newResource
+        }
       })
       
       player.on('error', error => {
         this.client.log('error', 'Radio player error:', error)
+        const channel = interaction.channel
+        if (channel) {
+          channel.send('❌ Error en el stream de radio. Reconectando...').catch(() => {})
+        }
       })
       
+      // Embed con información
       const embed = new EmbedBuilder()
         .setColor(0xFF6B6B)
         .setTitle(`${station.emoji} Reproduciendo Radio`)
-        .setDescription(`**${station.name}**`)
+        .setDescription(
+          `**${station.name}**\n` +
+          `*${station.description}*`
+        )
         .addFields(
-          { name: '📡 Estado', value: 'En vivo', inline: true },
+          { name: '📡 Estado', value: '🔴 EN VIVO', inline: true },
           { name: '🔊 Canal', value: interaction.member.voice.channel.name, inline: true },
-          { name: '🎶 Calidad', value: 'Alta (Stream directo)', inline: true }
+          { name: '🎶 Calidad', value: 'Alta', inline: true },
+          { name: '⏱️ Iniciado', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true },
+          { name: '👥 Oyentes', value: `${interaction.member.voice.channel.members.size}`, inline: true },
+          { name: '🔊 Volumen', value: '50%', inline: true }
         )
         .setFooter({ 
-          text: `Solicitado por ${interaction.user.tag} • Usa /radio stop para detener`,
+          text: `Solicitado por ${interaction.user.tag}`,
           iconURL: interaction.user.displayAvatarURL()
         })
         .setTimestamp()
       
-      await interaction.editReply({ embeds: [embed] })
+      // Botones de control
+      const row = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('radio_stop')
+            .setEmoji('⏹️')
+            .setLabel('Detener')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('radio_volume_up')
+            .setEmoji('🔊')
+            .setLabel('Vol+')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('radio_volume_down')
+            .setEmoji('🔉')
+            .setLabel('Vol-')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('radio_info')
+            .setEmoji('ℹ️')
+            .setLabel('Info')
+            .setStyle(ButtonStyle.Primary)
+        )
+      
+      await interaction.editReply({ embeds: [embed], components: [row] })
       
     } catch (error) {
       this.client.log('error', 'Error en radio:', error)
-      await interaction.editReply('❌ Error al conectar con la estación de radio.')
+      await interaction.editReply('❌ Error al conectar con la estación. Verifica que la URL sea válida.')
     }
   }
 
@@ -136,39 +256,53 @@ module.exports = class Radio extends Command {
     data.connection.destroy()
     this.connections.delete(interaction.guild.id)
     
-    await interaction.reply('⏹️ Radio detenida')
+    const embed = new EmbedBuilder()
+      .setColor(0xFF0000)
+      .setTitle('⏹️ Radio Detenida')
+      .setDescription(`**${data.station.name}** ha sido detenida`)
+      .setFooter({ text: `Detenido por ${interaction.user.tag}` })
+      .setTimestamp()
+    
+    await interaction.reply({ embeds: [embed] })
   }
 
   async lista(interaction) {
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
       .setTitle('📻 Estaciones de Radio Disponibles')
-      .setDescription('Usa `/radio play estacion:nombre` para reproducir')
+      .setDescription('Usa `/radio play estacion:nombre` para reproducir\n')
     
     // Agrupar por región
-    const mexico = Object.entries(RADIO_STATIONS)
-      .filter(([_, s]) => ['babaradio', 'estacionkus', 'los40', 'radiobeatmx'].includes(_))
-      .map(([key, s]) => `• **${key}** - ${s.emoji} ${s.name}`)
-      .join('\n')
+    const mexico = []
+    const internacional = []
+    const latam = []
+    const otros = []
     
-    const internacional = Object.entries(RADIO_STATIONS)
-      .filter(([_, s]) => ['bbc1', 'kiss', 'capitalfm', 'power106'].includes(_))
-      .map(([key, s]) => `• **${key}** - ${s.emoji} ${s.name}`)
-      .join('\n')
+    Object.entries(RADIO_STATIONS).forEach(([key, s]) => {
+      const line = `▪️ **${key}** ${s.emoji} - *${s.name}*\n   ${s.description}`
+      
+      if (['babaradio', 'estacionkus', 'los40', 'radiobeatmx'].includes(key)) {
+        mexico.push(line)
+      } else if (['bbc1', 'kiss', 'capitalfm'].includes(key)) {
+        internacional.push(line)
+      } else if (['mega', 'rock101', 'disney'].includes(key)) {
+        latam.push(line)
+      } else {
+        otros.push(line)
+      }
+    })
     
-    const latam = Object.entries(RADIO_STATIONS)
-      .filter(([_, s]) => ['mega', 'rock101', 'disneyradio'].includes(_))
-      .map(([key, s]) => `• **${key}** - ${s.emoji} ${s.name}`)
-      .join('\n')
-    
-    if (mexico) embed.addFields({ name: '🇲🇽 México', value: mexico })
-    if (internacional) embed.addFields({ name: '🌎 Internacional', value: internacional })
-    if (latam) embed.addFields({ name: '🌎 Latinoamérica', value: latam })
+    if (mexico.length) embed.addFields({ name: '🇲🇽 México', value: mexico.join('\n\n') })
+    if (internacional.length) embed.addFields({ name: '🌎 Internacional', value: internacional.join('\n\n') })
+    if (latam.length) embed.addFields({ name: '🌎 Latinoamérica', value: latam.join('\n\n') })
+    if (otros.length) embed.addFields({ name: '🎵 Otros', value: otros.join('\n\n') })
     
     embed.addFields({ 
       name: '🔗 Estación Personalizada', 
-      value: 'Usa `/radio custom url:tu_url` para reproducir cualquier stream' 
+      value: 'Usa `/radio custom url:tu_url` para cualquier stream' 
     })
+    
+    embed.setFooter({ text: `Total: ${Object.keys(RADIO_STATIONS).length} estaciones disponibles` })
     
     await interaction.reply({ embeds: [embed] })
   }
@@ -195,22 +329,43 @@ module.exports = class Radio extends Command {
       })
       
       const player = createAudioPlayer()
-      const resource = createAudioResource(url)
+      const resource = createAudioResource(url, { inlineVolume: true })
+      resource.volume?.setVolume(0.5)
       
       connection.subscribe(player)
       player.play(resource)
       
       this.connections.set(interaction.guild.id, { 
         connection, 
-        player, 
-        station: { name: 'Estación Personalizada', url, emoji: '📻' } 
+        player,
+        resource,
+        station: { name: 'Estación Personalizada', url, emoji: '📻', description: 'Stream personalizado' },
+        startTime: Date.now()
       })
       
-      await interaction.editReply('✅ Reproduciendo estación personalizada')
+      const embed = new EmbedBuilder()
+        .setColor(0x5865F2)
+        .setTitle('📻 Reproduciendo Estación Personalizada')
+        .setDescription(`Stream: \`${url.substring(0, 50)}...\``)
+        .addFields(
+          { name: '🔊 Canal', value: interaction.member.voice.channel.name, inline: true },
+          { name: '📡 Estado', value: 'En vivo', inline: true }
+        )
+      
+      const row = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('radio_stop')
+            .setEmoji('⏹️')
+            .setLabel('Detener')
+            .setStyle(ButtonStyle.Danger)
+        )
+      
+      await interaction.editReply({ embeds: [embed], components: [row] })
       
     } catch (error) {
       this.client.log('error', 'Error en radio custom:', error)
-      await interaction.editReply('❌ Error al reproducir. Verifica que la URL sea un stream de audio válido.')
+      await interaction.editReply('❌ Error al reproducir. Verifica que la URL sea válida.')
     }
   }
 
@@ -228,40 +383,32 @@ module.exports = class Radio extends Command {
               .setDescription('Nombre de la estación')
               .setRequired(true)
               .addChoices(
-                { name: '📻 BabaRadio', value: 'babaradio' },
-                { name: '📺 EstacionKusTV', value: 'estacionkus' },
-                { name: '🎵 Los 40 México', value: 'los40' },
-                { name: '🎸 Radio Beat MX', value: 'radiobeatmx' },
-                { name: '🇬🇧 BBC Radio 1', value: 'bbc1' },
-                { name: '💋 Kiss FM', value: 'kiss' },
-                { name: '🎧 Capital FM', value: 'capitalfm' },
-                { name: '🔊 Power 106', value: 'power106' },
-                { name: '🇨🇱 Mega Chile', value: 'mega' },
-                { name: '🤘 Rock & Pop', value: 'rock101' },
-                { name: '✨ Disney Radio', value: 'disneyradio' }
+                ...Object.entries(RADIO_STATIONS).map(([key, s]) => ({
+                  name: `${s.emoji} ${s.name}`,
+                  value: key
+                }))
               )
           )
       )
-      .addSubcommand(sub =>
-        sub
-          .setName('stop')
-          .setDescription('Detener la radio')
-      )
-      .addSubcommand(sub =>
-        sub
-          .setName('lista')
-          .setDescription('Ver todas las estaciones disponibles')
-      )
+      .addSubcommand(sub => sub.setName('stop').setDescription('Detener la radio'))
+      .addSubcommand(sub => sub.setName('lista').setDescription('Ver todas las estaciones'))
       .addSubcommand(sub =>
         sub
           .setName('custom')
-          .setDescription('Reproducir una URL de stream personalizada')
+          .setDescription('Reproducir stream personalizado')
           .addStringOption(opt =>
-            opt
-              .setName('url')
-              .setDescription('URL del stream de audio (http://...)')
-              .setRequired(true)
+            opt.setName('url').setDescription('URL del stream').setRequired(true)
           )
       )
   }
+}
+
+function once(emitter, event, options) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Timeout')), options?.timeout || 5000)
+    emitter.once(event, (...args) => {
+      clearTimeout(timeout)
+      resolve(args)
+    })
+  })
 }
