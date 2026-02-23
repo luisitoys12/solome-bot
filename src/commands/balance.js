@@ -1,35 +1,37 @@
 const Command = require('../structures/command.js')
 const { EmbedBuilder } = require('discord.js')
+const { load, save } = require('../utils/database.js')
+
+function getBalance(userId) {
+  const economy = load('economy', {})
+  return economy[userId] || { coins: 0, bank: 0 }
+}
 
 module.exports = class Balance extends Command {
   constructor (client) {
     super(client, {
       name: 'balance',
       aliases: ['bal', 'dinero', 'money'],
-      description: '💰 Muestra tu balance de monedas del servidor'
+      description: '💰 Consulta tu balance de monedas y banco'
     })
   }
 
   async runSlash (interaction) {
-    const usuario = interaction.options.getUser('usuario') || interaction.user
-    
-    // Simular balance (en producción usar base de datos)
-    const balance = Math.floor(Math.random() * 10000) + 100
-    const banco = Math.floor(Math.random() * 50000)
-    const total = balance + banco
-    
+    const targetUser = interaction.options.getUser('usuario') || interaction.user
+    const data = getBalance(targetUser.id)
+
     const embed = new EmbedBuilder()
       .setColor(0xffd700)
-      .setTitle(`💰 Balance de ${usuario.username}`)
-      .setThumbnail(usuario.displayAvatarURL())
+      .setTitle(`💰 Balance de ${targetUser.username}`)
+      .setThumbnail(targetUser.displayAvatarURL())
       .addFields(
-        { name: '💵 Efectivo', value: `$${balance.toLocaleString()}`, inline: true },
-        { name: '🏦 Banco', value: `$${banco.toLocaleString()}`, inline: true },
-        { name: '📊 Total', value: `$${total.toLocaleString()}`, inline: true }
+        { name: '💵 Efectivo', value: `${data.coins.toLocaleString()} monedas`, inline: true },
+        { name: '🏦 Banco', value: `${data.bank.toLocaleString()} monedas`, inline: true },
+        { name: '📊 Total', value: `${(data.coins + data.bank).toLocaleString()} monedas`, inline: true }
       )
-      .setFooter({ text: 'Sistema de economía de Solome Bot' })
+      .setFooter({ text: 'Usa /work para ganar más monedas' })
       .setTimestamp()
-    
+
     await interaction.reply({ embeds: [embed] })
   }
 

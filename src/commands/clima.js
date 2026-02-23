@@ -7,7 +7,7 @@ module.exports = class Clima extends Command {
     super(client, {
       name: 'clima',
       aliases: ['weather', 'tiempo'],
-      description: 'Muestra el clima actual de cualquier ciudad'
+      description: '⛅ Consulta el clima actual de cualquier ciudad'
     })
   }
 
@@ -15,38 +15,50 @@ module.exports = class Clima extends Command {
     await interaction.deferReply()
     
     const ciudad = interaction.options.getString('ciudad')
-    
+    const apiKey = process.env.WEATHER_API_KEY
+
+    if (!apiKey) {
+      return interaction.editReply('❌ No se ha configurado API key del clima. Contacta al administrador.')
+    }
+
     try {
-      // Usar API gratuita de clima
-      const response = await axios.get(`https://wttr.in/${encodeURIComponent(ciudad)}?format=j1`)
+      const response = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
+        params: {
+          q: ciudad,
+          appid: apiKey,
+          units: 'metric',
+          lang: 'es'
+        }
+      })
+
       const data = response.data
-      
-      const current = data.current_condition[0]
-      const location = data.nearest_area[0]
-      
+      const temp = Math.round(data.main.temp)
+      const feelsLike = Math.round(data.main.feels_like)
+      const description = data.weather[0].description
+      const icon = data.weather[0].icon
+
       const embed = new EmbedBuilder()
-        .setColor(0x00bcd4)
-        .setTitle(`☀️ Clima en ${ciudad}`)
-        .setDescription(
-          `**${current.lang_es?.[0]?.value || current.weatherDesc[0].value}**\n` +
-          `${location.areaName[0].value}, ${location.country[0].value}`
-        )
+        .setColor(0x00aaff)
+        .setTitle(`⛅ Clima en ${data.name}, ${data.sys.country}`)
+        .setThumbnail(`https://openweathermap.org/img/wn/${icon}@2x.png`)
         .addFields(
-          { name: '🌡️ Temperatura', value: `${current.temp_C}°C / ${current.temp_F}°F`, inline: true },
-          { name: '💧 Humedad', value: `${current.humidity}%`, inline: true },
-          { name: '💨 Viento', value: `${current.windspeedKmph} km/h`, inline: true },
-          { name: '🕶️ Sensación térmica', value: `${current.FeelsLikeC}°C`, inline: true },
-          { name: '🌧️ Precipitación', value: `${current.precipMM} mm`, inline: true },
-          { name: '👁️ Visibilidad', value: `${current.visibility} km`, inline: true }
+          { name: '🌡️ Temperatura', value: `${temp}°C`, inline: true },
+          { name: '🤔 Sensación', value: `${feelsLike}°C`, inline: true },
+          { name: '💧 Humedad', value: `${data.main.humidity}%`, inline: true },
+          { name: '🌬️ Viento', value: `${data.wind.speed} km/h`, inline: true },
+          { name: '☁️ Condición', value: description, inline: true }
         )
-        .setThumbnail(`https:${current.weatherIconUrl[0].value}`)
-        .setFooter({ text: 'Datos de wttr.in' })
+        .setFooter({ text: 'Datos de OpenWeatherMap' })
         .setTimestamp()
-      
+
       await interaction.editReply({ embeds: [embed] })
+
     } catch (error) {
-      this.client.log('error', error)
-      await interaction.editReply('❌ No se pudo obtener el clima de esa ciudad. Verifica el nombre.')
+      if (error.response?.status === 404) {
+        await interaction.editReply(`❌ No se encontró la ciudad "${ciudad}". Verifica el nombre.`)
+      } else {
+        await interaction.editReply('❌ Error al obtener el clima. Intenta nuevamente.')
+      }
     }
   }
 

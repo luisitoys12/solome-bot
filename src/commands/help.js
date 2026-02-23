@@ -6,37 +6,32 @@ module.exports = class Help extends Command {
     super(client, {
       name: 'help',
       aliases: ['ayuda', 'comandos'],
-      description: 'Muestra todos los comandos disponibles del bot organizados por categorías'
+      description: '📚 Menú de ayuda con todos los comandos disponibles'
     })
   }
 
   async runSlash (interaction) {
     const categoria = interaction.options.getString('categoria')
 
-    if (!categoria) {
-      return this.showMainMenu(interaction)
+    if (categoria) {
+      return this.showCategory(interaction, categoria)
     }
 
-    return this.showCategory(interaction, categoria)
-  }
-
-  async showMainMenu(interaction) {
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle('👋 Ayuda - BabaRadio Bot')
-      .setDescription(
-        'Selecciona una categoría para ver los comandos disponibles.\n\n' +
-        '**Categorías Disponibles:**\n' +
-        '🎵 Música - Comandos de reproducción\n' +
-        '📻 Radio - Estaciones de radio\n' +
-        '🎮 Diversión - Juegos y entretenimiento\n' +
-        '🛡️ Moderación - Herramientas de moderación\n' +
-        '🔧 Utilidad - Comandos útiles\n' +
-        '⚙️ Administración - Comandos admin\n' +
-        '🎮 Gamer - Perfiles gaming\n' +
-        '⭐ Premium - Funciones premium'
+      .setTitle('📚 Menú de Ayuda - SOLOME Bot')
+      .setDescription('Selecciona una categoría para ver los comandos disponibles')
+      .addFields(
+        { name: '🎵 Música', value: 'Reproduce música de YouTube, Spotify y más', inline: true },
+        { name: '📻 Radio', value: 'Escucha estaciones de radio en vivo', inline: true },
+        { name: '🎮 Diversión', value: 'Juegos, entretenimiento y mini-juegos', inline: true },
+        { name: '🛡️ Moderación', value: 'Herramientas de moderación', inline: true },
+        { name: '🔧 Utilidad', value: 'Comandos útiles variados', inline: true },
+        { name: '⚙️ Administración', value: 'Configuración del servidor', inline: true },
+        { name: '🎮 Gamer', value: 'Perfiles gaming y LFG', inline: true },
+        { name: '⭐ Premium', value: 'Funciones premium exclusivas', inline: true }
       )
-      .setFooter({ text: 'Usa /help [categoria] para ver comandos específicos' })
+      .setFooter({ text: 'Usa /help categoria:NOMBRE para ver comandos específicos' })
       .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
@@ -46,49 +41,48 @@ module.exports = class Help extends Command {
     const categories = {
       MUSIC: {
         name: '🎵 Música',
-        commands: ['/play', '/queue', '/skip', '/stop', '/music', '/lyrics']
+        commands: '/play, /skip, /stop, /queue, /premium-music'
       },
       RADIO: {
         name: '📻 Radio',
-        commands: ['/radio', '/radioinfo']
+        commands: '/radio, /radioinfo, /premium-radio'
       },
       FUN: {
         name: '🎮 Diversión',
-        commands: ['/8ball', '/coinflip', '/dice', '/duelo', '/tictactoe', '/connect4', '/loteria']
+        commands: '/duelo, /loteria, /ruleta, /slots, /entretenimiento'
       },
       MODERATION: {
         name: '🛡️ Moderación',
-        commands: ['/ban', '/kick', '/timeout', '/warn', '/clear', '/lock', '/unlock', '/slowmode']
+        commands: '/moderar, /ban, /kick, /clear, /warn'
       },
       UTILITY: {
         name: '🔧 Utilidad',
-        commands: ['/ping', '/help', '/userinfo', '/serverinfo', '/avatar', '/uptime']
+        commands: '/clima, /traducir, /recordatorio, /download, /noticias'
       },
       ADMIN: {
         name: '⚙️ Administración',
-        commands: ['/announce', '/poll', '/giveaway', '/portal', '/ticket']
+        commands: '/setup, /config, /announce'
       },
       GAMER: {
         name: '🎮 Gamer',
-        commands: ['/perfil-gamer', '/alter-ego']
+        commands: '/perfil-gamer, /alter-ego, /stream'
       },
       PREMIUM: {
         name: '⭐ Premium',
-        commands: ['/premium', '/credits']
+        commands: '/vip, /premium-music, /premium-radio'
       }
     }
 
     const category = categories[cat]
     if (!category) {
-      return interaction.reply({ content: '❌ Categoría no encontrada.', ephemeral: true })
+      return interaction.reply({ content: '❌ Categoría no encontrada', ephemeral: true })
     }
 
     const embed = new EmbedBuilder()
-      .setColor(0x00ff88)
-      .setTitle(`${category.name} - Comandos`)
-      .setDescription(category.commands.map(cmd => `• **${cmd}**`).join('\n'))
-      .setFooter({ text: `Total: ${category.commands.length} comandos` })
-      .setTimestamp()
+      .setColor(0x5865f2)
+      .setTitle(category.name)
+      .setDescription(`**Comandos disponibles:**\n${category.commands}`)
+      .setFooter({ text: 'Usa /help para ver todas las categorías' })
 
     await interaction.reply({ embeds: [embed] })
   }
@@ -106,14 +100,12 @@ module.exports = class Help extends Command {
           choices: [
             { name: '🎵 Música', value: 'MUSIC' },
             { name: '📻 Radio', value: 'RADIO' },
-            { name: '📺 Streamers', value: 'STREAM' },
             { name: '🎮 Diversión', value: 'FUN' },
             { name: '🛡️ Moderación', value: 'MODERATION' },
             { name: '🔧 Utilidad', value: 'UTILITY' },
             { name: '⚙️ Administración', value: 'ADMIN' },
             { name: '🎮 Gamer', value: 'GAMER' },
-            { name: '⭐ Premium', value: 'PREMIUM' },
-            { name: '👨‍💻 Desarrollador', value: 'DEVELOPER' }
+            { name: '⭐ Premium', value: 'PREMIUM' }
           ]
         }
       ]
