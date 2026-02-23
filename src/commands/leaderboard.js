@@ -6,71 +6,34 @@ module.exports = class Leaderboard extends Command {
   constructor (client) {
     super(client, {
       name: 'leaderboard',
-      aliases: ['top', 'ranking'],
-      description: '🏆 Muestra el ranking de niveles y economía del servidor'
+      aliases: ['lb', 'top', 'ranking'],
+      description: '🏆 Muestra el ranking de niveles o dinero del servidor'
     })
   }
 
   async runSlash (interaction) {
     const tipo = interaction.options.getString('tipo') || 'nivel'
     
-    if (tipo === 'nivel') {
-      await this.rankingNiveles(interaction)
-    } else if (tipo === 'dinero') {
-      await this.rankingEconomia(interaction)
-    }
-  }
-
-  async rankingNiveles(interaction) {
-    const levels = load('levels', {})
-    const guildMembers = await interaction.guild.members.fetch()
-    
-    const ranking = Object.entries(levels)
-      .filter(([userId]) => guildMembers.has(userId))
-      .sort((a, b) => (b[1].xp || 0) - (a[1].xp || 0))
+    const data = tipo === 'nivel' ? load('levels', {}) : load('economy', {})
+    const sorted = Object.entries(data)
+      .sort(([, a], [, b]) => {
+        const aVal = tipo === 'nivel' ? (a.level || 0) : a
+        const bVal = tipo === 'nivel' ? (b.level || 0) : b
+        return bVal - aVal
+      })
       .slice(0, 10)
 
     const embed = new EmbedBuilder()
       .setColor(0xffd700)
-      .setTitle('🏆 Top 10 - Niveles')
-      .setDescription(ranking.length === 0 ? 'No hay datos aún' : '')
-
-    ranking.forEach(([userId, data], index) => {
-      const user = guildMembers.get(userId)
-      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`
-      embed.addFields({
-        name: `${medal} ${user?.user.username || 'Usuario'}`,
-        value: `Nivel ${data.level || 0} - ${data.xp || 0} XP`,
-        inline: false
-      })
-    })
-
-    await interaction.reply({ embeds: [embed] })
-  }
-
-  async rankingEconomia(interaction) {
-    const economy = load('economy', {})
-    const guildMembers = await interaction.guild.members.fetch()
-    
-    const ranking = Object.entries(economy)
-      .filter(([userId]) => guildMembers.has(userId))
-      .sort((a, b) => (b[1].balance || 0) - (a[1].balance || 0))
-      .slice(0, 10)
-
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle('💰 Top 10 - Economía')
-      .setDescription(ranking.length === 0 ? 'No hay datos aún' : '')
-
-    ranking.forEach(([userId, data], index) => {
-      const user = guildMembers.get(userId)
-      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`
-      embed.addFields({
-        name: `${medal} ${user?.user.username || 'Usuario'}`,
-        value: `$${data.balance || 0}`,
-        inline: false
-      })
-    })
+      .setTitle(`🏆 Top 10 - ${tipo === 'nivel' ? 'Niveles' : 'Dinero'}`)
+      .setDescription(
+        sorted.map(([userId, val], i) => {
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`
+          const value = tipo === 'nivel' ? `Nivel ${val.level}` : `${val} monedas`
+          return `${medal} <@${userId}> - ${value}`
+        }).join('\n') || 'No hay datos'
+      )
+      .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
   }

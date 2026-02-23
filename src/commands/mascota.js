@@ -7,101 +7,71 @@ module.exports = class Mascota extends Command {
     super(client, {
       name: 'mascota',
       aliases: ['pet'],
-      description: '🐾 Sistema de mascotas virtuales - Adopta, cuida y juega con tu mascota'
+      description: '🐾 Adopta y cuida tu mascota virtual'
     })
   }
 
   async runSlash (interaction) {
     const accion = interaction.options.getString('accion') || 'ver'
-    
-    if (accion === 'ver') await this.ver(interaction)
-    else if (accion === 'adoptar') await this.adoptar(interaction)
-    else if (accion === 'alimentar') await this.alimentar(interaction)
-    else if (accion === 'jugar') await this.jugar(interaction)
-    else if (accion === 'liberar') await this.liberar(interaction)
-  }
-
-  async ver(interaction) {
     const mascotas = load('mascotas', {})
-    const mascota = mascotas[interaction.user.id]
+    const userId = interaction.user.id
 
-    if (!mascota) {
-      return interaction.reply({ content: '❌ No tienes mascota. Usa `/mascota adoptar`.', ephemeral: true })
+    if (accion === 'adoptar') {
+      if (mascotas[userId]) {
+        return interaction.reply({ content: '❌ Ya tienes una mascota', ephemeral: true })
+      }
+
+      const tipos = ['🐶', '🐱', '🐹', '🐰', '🦊']
+      const mascota = {
+        tipo: tipos[Math.floor(Math.random() * tipos.length)],
+        nombre: 'Sin nombre',
+        hambre: 50,
+        felicidad: 50,
+        createdAt: Date.now()
+      }
+
+      mascotas[userId] = mascota
+      save('mascotas', mascotas)
+
+      return interaction.reply(`🎉 ¡Adoptaste una mascota ${mascota.tipo}!`)
     }
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff69b4)
-      .setTitle(`🐾 ${mascota.nombre}`)
-      .addFields(
-        { name: '🌟 Tipo', value: mascota.tipo, inline: true },
-        { name: '❤️ Felicidad', value: `${mascota.felicidad}/100`, inline: true },
-        { name: '🍔 Hambre', value: `${mascota.hambre}/100`, inline: true }
-      )
-
-    await interaction.reply({ embeds: [embed] })
-  }
-
-  async adoptar(interaction) {
-    const mascotas = load('mascotas', {})
-    if (mascotas[interaction.user.id]) {
-      return interaction.reply({ content: '❌ Ya tienes una mascota!', ephemeral: true })
+    if (!mascotas[userId]) {
+      return interaction.reply({ content: '❌ No tienes mascota. Usa `/mascota accion:adoptar`', ephemeral: true })
     }
 
-    const tipos = ['🐶 Perro', '🐱 Gato', '🐹 Hámster', '🐰 Conejo']
-    const tipo = tipos[Math.floor(Math.random() * tipos.length)]
+    const mascota = mascotas[userId]
 
-    mascotas[interaction.user.id] = {
-      nombre: `Mascota de ${interaction.user.username}`,
-      tipo,
-      felicidad: 50,
-      hambre: 50,
-      adoptedAt: Date.now()
-    }
-    save('mascotas', mascotas)
+    if (accion === 'ver') {
+      const embed = new EmbedBuilder()
+        .setColor(0xff69b4)
+        .setTitle(`${mascota.tipo} ${mascota.nombre}`)
+        .addFields(
+          { name: '🍔 Hambre', value: `${mascota.hambre}/100`, inline: true },
+          { name: '😀 Felicidad', value: `${mascota.felicidad}/100`, inline: true }
+        )
+        .setTimestamp()
 
-    await interaction.reply(`✅ ¡Adoptaste un ${tipo}!`)
-  }
-
-  async alimentar(interaction) {
-    const mascotas = load('mascotas', {})
-    const mascota = mascotas[interaction.user.id]
-
-    if (!mascota) {
-      return interaction.reply({ content: '❌ No tienes mascota.', ephemeral: true })
+      return interaction.reply({ embeds: [embed] })
     }
 
-    mascota.hambre = Math.max(0, mascota.hambre - 30)
-    mascota.felicidad = Math.min(100, mascota.felicidad + 10)
-    save('mascotas', mascotas)
-
-    await interaction.reply('🍔 Alimentaste a tu mascota!')
-  }
-
-  async jugar(interaction) {
-    const mascotas = load('mascotas', {})
-    const mascota = mascotas[interaction.user.id]
-
-    if (!mascota) {
-      return interaction.reply({ content: '❌ No tienes mascota.', ephemeral: true })
+    if (accion === 'alimentar') {
+      mascota.hambre = Math.min(100, mascota.hambre + 20)
+      save('mascotas', mascotas)
+      return interaction.reply(`🍔 Alimentaste a tu mascota ${mascota.tipo}`)
     }
 
-    mascota.felicidad = Math.min(100, mascota.felicidad + 20)
-    mascota.hambre = Math.min(100, mascota.hambre + 10)
-    save('mascotas', mascotas)
-
-    await interaction.reply('🎾 ¡Jugaste con tu mascota!')
-  }
-
-  async liberar(interaction) {
-    const mascotas = load('mascotas', {})
-    if (!mascotas[interaction.user.id]) {
-      return interaction.reply({ content: '❌ No tienes mascota.', ephemeral: true })
+    if (accion === 'jugar') {
+      mascota.felicidad = Math.min(100, mascota.felicidad + 20)
+      save('mascotas', mascotas)
+      return interaction.reply(`🎮 Jugaste con tu mascota ${mascota.tipo}`)
     }
 
-    delete mascotas[interaction.user.id]
-    save('mascotas', mascotas)
-
-    await interaction.reply('🚪 Liberaste a tu mascota...')
+    if (accion === 'liberar') {
+      delete mascotas[userId]
+      save('mascotas', mascotas)
+      return interaction.reply(`👋 Liberaste a tu mascota ${mascota.tipo}`)
+    }
   }
 
   getSlashCommandData() {
@@ -116,8 +86,8 @@ module.exports = class Mascota extends Command {
           required: false,
           choices: [
             { name: '🐾 Ver mi mascota', value: 'ver' },
-            { name: '🏪 Adoptar mascota', value: 'adoptar' },
-            { name: '🍽️ Alimentar', value: 'alimentar' },
+            { name: '🏠 Adoptar mascota', value: 'adoptar' },
+            { name: '🍔 Alimentar', value: 'alimentar' },
             { name: '🎮 Jugar', value: 'jugar' },
             { name: '🚪 Liberar', value: 'liberar' }
           ]
