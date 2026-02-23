@@ -1,174 +1,147 @@
-// Error Handler with 404 reporting and webhook notification
-const { EmbedBuilder, WebhookClient } = require('discord.js')
-const axios = require('axios')
+const { EmbedBuilder } = require('discord.js')
 
-// Owner webhook configuration (add to .env: OWNER_WEBHOOK_URL)
-const OWNER_WEBHOOK_URL = process.env.OWNER_WEBHOOK_URL || null
-let webhookClient = null
-
-if (OWNER_WEBHOOK_URL) {
-  try {
-    webhookClient = new WebhookClient({ url: OWNER_WEBHOOK_URL })
-  } catch (error) {
-    console.error('Failed to initialize webhook client:', error)
-  }
+// Mensajes de error amigables para usuarios
+const ERROR_MESSAGES = {
+  TIMEOUT: '❌ El comando tardó demasiado en responder. Intenta de nuevo.',
+  API_ERROR: '❌ Error de conexión. Intenta de nuevo en unos momentos.',
+  PERMISSION: '❌ No tienes permisos para ejecutar este comando.',
+  NOT_FOUND: '❌ Recurso no encontrado.',
+  RATE_LIMIT: '❌ Demasiadas peticiones. Espera unos segundos.',
+  INVALID_INPUT: '❌ Parámetros inválidos. Verifica tu comando.',
+  DATABASE: '❌ Error temporal del sistema. Intenta de nuevo.',
+  UNKNOWN: '❌ Ocurrió un error inesperado. El problema ha sido reportado.'
 }
 
 /**
- * Handle 404 command not found errors
+ * Detecta el tipo de error y retorna un mensaje amigable
  */
-async function handle404Error(client, interaction, commandName) {
-  const errorData = {
-    commandName: commandName,
-    userId: interaction.user.id,
-    userTag: interaction.user.tag,
-    guildId: interaction.guild?.id || 'DM',
-    guildName: interaction.guild?.name || 'Direct Message',
-    channelId: interaction.channel?.id,
-    timestamp: new Date().toISOString(),
-    type: 'COMMAND_NOT_FOUND'
-  }
-
-  // Log to console
-  client.log('error', `❌ 404 Command Not Found: /${commandName} by ${interaction.user.tag} in ${errorData.guildName}`)
-
-  // Save to database/file
-  try {
-    const fs = require('fs')
-    const path = require('path')
-    const errorLogPath = path.join(__dirname, '../../data/error-logs.json')
-    
-    let errorLogs = []
-    if (fs.existsSync(errorLogPath)) {
-      errorLogs = JSON.parse(fs.readFileSync(errorLogPath, 'utf8'))
-    }
-    
-    errorLogs.push(errorData)
-    
-    // Keep only last 100 errors
-    if (errorLogs.length > 100) {
-      errorLogs = errorLogs.slice(-100)
-    }
-    
-    fs.writeFileSync(errorLogPath, JSON.stringify(errorLogs, null, 2))
-  } catch (err) {
-    console.error('Failed to save error log:', err)
-  }
-
-  // Send to owner via webhook
-  if (webhookClient) {
-    try {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('🚨 404 - Comando No Encontrado')
-        .setDescription(`Se intentó ejecutar un comando que no existe o no está registrado.`)
-        .addFields(
-          { name: '📝 Comando', value: `\`/${commandName}\``, inline: true },
-          { name: '👤 Usuario', value: `${interaction.user.tag}\n(${interaction.user.id})`, inline: true },
-          { name: '🏠 Servidor', value: `${errorData.guildName}\n(${errorData.guildId})`, inline: false },
-          { name: '📍 Canal', value: `<#${errorData.channelId}>`, inline: true },
-          { name: '⏰ Timestamp', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true }
-        )
-        .setFooter({ text: 'Sistema de Reporte Automático' })
-        .setTimestamp()
-
-      await webhookClient.send({
-        username: 'Error Reporter',
-        avatarURL: 'https://cdn.discordapp.com/emojis/1234567890.png',
-        embeds: [embed]
-      })
-
-      client.log('info', '✅ Error report sent to owner webhook')
-    } catch (error) {
-      client.log('error', 'Failed to send webhook notification:', error)
-    }
-  }
-
-  // Reply to user
-  const userEmbed = new EmbedBuilder()
-    .setColor(0xff6b6b)
-    .setTitle('❌ Error 404: Comando No Encontrado')
-    .setDescription(
-      `El comando \`/${commandName}\` no existe o no está disponible.\n\n` +
-      '**Posibles razones:**\n' +
-      '• El comando fue eliminado o renombrado\n' +
-      '• Hay un error de escritura\n' +
-      '• El bot no tiene permisos necesarios\n\n' +
-      '**Solución:**\n' +
-      '• Usa `/help` para ver comandos disponibles\n' +
-      '• Verifica que escribiste bien el comando\n' +
-      '• Contacta a un administrador si el problema persiste'
-    )
-    .addFields(
-      { name: '🆔 Reporte ID', value: `\`${Date.now()}\``, inline: true },
-      { name: '📊 Estado', value: '✅ Reportado al desarrollador', inline: true }
-    )
-    .setFooter({ text: 'Este error ha sido reportado automáticamente' })
-    .setTimestamp()
-
-  try {
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ embeds: [userEmbed] })
-    } else {
-      await interaction.reply({ embeds: [userEmbed], ephemeral: true })
-    }
-  } catch (err) {
-    client.log('error', 'Failed to send error message to user:', err)
-  }
-
-  return errorData
+function getErrorType(error) {
+  if (!error) return 'UNKNOWN'
+  
+  const message = error.message?.toLowerCase() || ''
+  
+  if (message.includes('timeout') || message.includes('timed out')) return 'TIMEOUT'
+  if (message.includes('rate limit')) return 'RATE_LIMIT'
+  if (message.includes('permission')) return 'PERMISSION'
+  if (message.includes('not found') || error.code === 10062) return 'NOT_FOUND'
+  if (message.includes('api') || message.includes('fetch')) return 'API_ERROR'
+  if (message.includes('database') || message.includes('enoent')) return 'DATABASE'
+  if (message.includes('invalid') || message.includes('required')) return 'INVALID_INPUT'
+  
+  return 'UNKNOWN'
 }
 
 /**
- * Handle general command execution errors
+ * Maneja errores de comandos y responde al usuario de forma amigable
  */
 async function handleCommandError(client, interaction, error, commandName) {
-  client.log('error', `Error executing command /${commandName}:`, error)
-
-  // Send to webhook if critical
-  if (webhookClient && error.name !== 'DiscordAPIError') {
-    try {
-      const embed = new EmbedBuilder()
-        .setColor(0xffa500)
-        .setTitle('⚠️ Error de Ejecución de Comando')
-        .setDescription(`Error al ejecutar \`/${commandName}\``)
-        .addFields(
-          { name: '❌ Error', value: `\`\`\`${error.message?.substring(0, 1000)}\`\`\``, inline: false },
-          { name: '👤 Usuario', value: `${interaction.user.tag}`, inline: true },
-          { name: '🏠 Servidor', value: `${interaction.guild?.name || 'DM'}`, inline: true }
-        )
-        .setTimestamp()
-
-      await webhookClient.send({ embeds: [embed] })
-    } catch (err) {
-      client.log('error', 'Failed to send error webhook:', err)
-    }
+  const errorType = getErrorType(error)
+  const userMessage = ERROR_MESSAGES[errorType]
+  
+  // Log completo en consola para debugging (solo visible para admins del servidor)
+  client.log('error', `❌ Error en comando /${commandName}:`, {
+    user: interaction.user.tag,
+    guild: interaction.guild?.name || 'DM',
+    error: error.message,
+    stack: error.stack?.split('\n').slice(0, 3).join('\n')
+  })
+  
+  // Log detallado en archivo si existe sistema de logs
+  if (client.logger) {
+    client.logger.error({
+      command: commandName,
+      user: interaction.user.id,
+      guild: interaction.guild?.id,
+      error: error.message,
+      stack: error.stack
+    })
   }
-
-  // Reply to user
+  
+  // Responder al usuario con mensaje amigable (SIN stack trace)
   const embed = new EmbedBuilder()
-    .setColor(0xff0000)
-    .setTitle('❌ Error de Ejecución')
-    .setDescription(
-      `Ocurrió un error al ejecutar el comando \`/${commandName}\`.\n\n` +
-      '**El error ha sido reportado automáticamente al desarrollador.**'
-    )
-    .setFooter({ text: 'Intenta nuevamente en unos momentos' })
+    .setColor(0xe74c3c)
+    .setTitle('❌ Error al ejecutar comando')
+    .setDescription(userMessage)
+    .setFooter({ 
+      text: 'Si el problema persiste, contacta a los administradores',
+      iconURL: interaction.client.user.displayAvatarURL()
+    })
     .setTimestamp()
-
+  
   try {
     if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ embeds: [embed] })
+      await interaction.followUp({ embeds: [embed], flags: 64 })
     } else {
-      await interaction.reply({ embeds: [embed], ephemeral: true })
+      await interaction.reply({ embeds: [embed], flags: 64 })
     }
-  } catch (err) {
-    client.log('error', 'Failed to send error message:', err)
+  } catch (replyError) {
+    // Si no se puede responder, solo loguear
+    client.log('error', 'No se pudo responder al usuario:', replyError.message)
+  }
+}
+
+/**
+ * Maneja errores 404 (comando no encontrado)
+ */
+async function handle404Error(client, interaction, commandName) {
+  client.log('warn', `Comando no encontrado: /${commandName} por ${interaction.user.tag}`)
+  
+  const embed = new EmbedBuilder()
+    .setColor(0xf39c12)
+    .setTitle('⚠️ Comando no encontrado')
+    .setDescription(
+      `El comando \`/${commandName}\` no existe o no está disponible.\n\n` +
+      'Usa `/help` para ver todos los comandos disponibles.'
+    )
+    .setFooter({ text: 'Verifica que escribiste el comando correctamente' })
+    .setTimestamp()
+  
+  try {
+    await interaction.reply({ embeds: [embed], flags: 64 })
+  } catch (error) {
+    client.log('error', 'Error enviando mensaje 404:', error.message)
+  }
+}
+
+/**
+ * Maneja errores de permisos
+ */
+async function handlePermissionError(client, interaction, requiredPermission) {
+  const embed = new EmbedBuilder()
+    .setColor(0xe74c3c)
+    .setTitle('🚫 Sin permisos')
+    .setDescription(
+      `No tienes permisos para ejecutar este comando.\n\n` +
+      `**Permiso requerido:** \`${requiredPermission}\``
+    )
+    .setFooter({ text: 'Contacta a un administrador si crees que es un error' })
+    .setTimestamp()
+  
+  try {
+    await interaction.reply({ embeds: [embed], flags: 64 })
+  } catch (error) {
+    client.log('error', 'Error enviando mensaje de permisos:', error.message)
+  }
+}
+
+/**
+ * Formatea errores para logs (sin exponer a usuarios)
+ */
+function formatErrorForLog(error) {
+  if (!error) return 'Unknown error'
+  
+  return {
+    message: error.message,
+    name: error.name,
+    code: error.code,
+    stack: error.stack?.split('\n').slice(0, 5).join('\n')
   }
 }
 
 module.exports = {
-  handle404Error,
   handleCommandError,
-  webhookClient
+  handle404Error,
+  handlePermissionError,
+  formatErrorForLog,
+  getErrorType
 }
