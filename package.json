@@ -1,14 +1,13 @@
 {
-  "name": "baba-radio",
+  "name": "solome-bot",
   "version": "4.0.0",
-  "description": "Bot multifuncional para BabaRadio con música, radio, juegos y más",
+  "description": "Bot multifuncional para BabaRadio y EstacionKusTV con música, radio, IA, juegos y dashboard web",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "register": "node register-commands.js",
     "dev": "nodemon src/index.js"
   },
-  "keywords": ["discord", "bot", "music", "radio"],
+  "keywords": ["discord", "bot", "music", "radio", "ai", "dashboard"],
   "author": "EstacionKusTV",
   "license": "MIT",
   "dependencies": {
@@ -18,6 +17,7 @@
     "@discordjs/rest": "^2.4.0",
     "dotenv": "^16.4.5",
     "axios": "^1.7.7",
+    "express": "^4.18.2",
     "ytdl-core": "^4.11.5",
     "prism-media": "^1.3.5",
     "libsodium-wrappers": "^0.7.15",
