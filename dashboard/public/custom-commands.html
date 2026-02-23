@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandos Custom - SOLOME Bot</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-icon">🤖</span>
+            <h2>SOLOME</h2>
+        </div>
+        
+        <ul class="nav-menu">
+            <li><a href="/" class="nav-link">
+                <span class="icon">📊</span>
+                <span>Dashboard</span>
+            </a></li>
+            <li><a href="/commands" class="nav-link">
+                <span class="icon">⚡</span>
+                <span>Comandos</span>
+            </a></li>
+            <li><a href="/custom-commands" class="nav-link active">
+                <span class="icon">🛠️</span>
+                <span>Comandos Custom</span>
+            </a></li>
+            <li><a href="/modules" class="nav-link">
+                <span class="icon">🧩</span>
+                <span>Módulos</span>
+            </a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="bot-status" id="botStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Online</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <div>
+                <h1>🛠️ Comandos Personalizados</h1>
+                <p>Crea comandos custom sin programar</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCommandModal()">
+                <span>➕</span> Nuevo Comando
+            </button>
+        </header>
+
+        <!-- Custom Commands List -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📝 Tus Comandos</h2>
+            </div>
+            <div class="card-body">
+                <div id="customCommandsList" class="commands-list">
+                    <div class="loading">Cargando comandos...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para crear/editar comando -->
+    <div id="commandModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">✨ Nuevo Comando</h2>
+                <button class="modal-close" onclick="closeCommandModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="commandForm" onsubmit="saveCommand(event)">
+                    <div class="form-group">
+                        <label>Nombre del Comando</label>
+                        <input type="text" id="commandName" class="form-input" placeholder="hola" required>
+                        <small>Sin espacios ni caracteres especiales</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Respuesta del Comando</label>
+                        <textarea id="commandResponse" class="form-textarea" rows="6" placeholder="¡Hola {user}! Bienvenido a {server}" required></textarea>
+                        <small>Variables disponibles: {user}, {server}, {channel}</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="commandEnabled" checked>
+                            <span>Comando activado</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeCommandModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Comando</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/custom-commands.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandos - SOLOME Bot</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-icon">🤖</span>
+            <h2>SOLOME</h2>
+        </div>
+        
+        <ul class="nav-menu">
+            <li><a href="/" class="nav-link">
+                <span class="icon">📊</span>
+                <span>Dashboard</span>
+            </a></li>
+            <li><a href="/commands" class="nav-link active">
+                <span class="icon">⚡</span>
+                <span>Comandos</span>
+            </a></li>
+            <li><a href="/custom-commands" class="nav-link">
+                <span class="icon">🛠️</span>
+                <span>Comandos Custom</span>
+            </a></li>
+            <li><a href="/modules" class="nav-link">
+                <span class="icon">🧩</span>
+                <span>Módulos</span>
+            </a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="bot-status" id="botStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Online</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <h1>⚡ Lista de Comandos</h1>
+            <p>Todos los comandos disponibles del bot</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" id="commandSearch" placeholder="🔍 Buscar comando..." onkeyup="filterCommands()">
+        </div>
+
+        <!-- Commands List -->
+        <div id="commandsList" class="commands-grid">
+            <div class="loading">Cargando comandos...</div>
+        </div>
+    </main>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/commands.js"></script>
+</body>
+</html>

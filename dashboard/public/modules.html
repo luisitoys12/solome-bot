@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulos - SOLOME Bot</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <span class="logo-icon">🤖</span>
+            <h2>SOLOME</h2>
+        </div>
+        
+        <ul class="nav-menu">
+            <li><a href="/" class="nav-link">
+                <span class="icon">📊</span>
+                <span>Dashboard</span>
+            </a></li>
+            <li><a href="/commands" class="nav-link">
+                <span class="icon">⚡</span>
+                <span>Comandos</span>
+            </a></li>
+            <li><a href="/custom-commands" class="nav-link">
+                <span class="icon">🛠️</span>
+                <span>Comandos Custom</span>
+            </a></li>
+            <li><a href="/modules" class="nav-link active">
+                <span class="icon">🧩</span>
+                <span>Módulos</span>
+            </a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="bot-status" id="botStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Online</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <h1>🧩 Módulos del Bot</h1>
+            <p>Activa o desactiva funcionalidades</p>
+        </header>
+
+        <!-- Modules Grid -->
+        <div class="modules-grid" id="modulesList">
+            <div class="module-card">
+                <div class="module-icon">🎵</div>
+                <div class="module-info">
+                    <h3>Música</h3>
+                    <p>Reproducción de YouTube, Spotify, SoundCloud</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('music', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">📻</div>
+                <div class="module-info">
+                    <h3>Radio</h3>
+                    <p>Estaciones de radio en vivo</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('radio', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">💰</div>
+                <div class="module-info">
+                    <h3>Economía</h3>
+                    <p>Sistema de monedas, daily, work, tienda</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('economy', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">🏆</div>
+                <div class="module-info">
+                    <h3>Niveles</h3>
+                    <p>Sistema de XP y niveles</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('leveling', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">🛡️</div>
+                <div class="module-info">
+                    <h3>Moderación</h3>
+                    <p>Auto-moderación con IA</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" onchange="toggleModule('moderation', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">🤖</div>
+                <div class="module-info">
+                    <h3>Inteligencia Artificial</h3>
+                    <p>ChatGPT, DALL-E, Voice AI</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('ai', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">🎮</div>
+                <div class="module-info">
+                    <h3>Juegos</h3>
+                    <p>Casino, duelos, lotería</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('games', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="module-card">
+                <div class="module-icon">📰</div>
+                <div class="module-info">
+                    <h3>Noticias</h3>
+                    <p>RSS de medios mexicanos</p>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="toggleModule('news', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/modules.js"></script>
+</body>
+</html>
