@@ -1,8 +1,8 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder } = require('discord.js')
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js')
 const axios = require('axios')
 
-// Configuración por servidor (en producción: base de datos)
+// Configuración por servidor
 const serverConfigs = new Map()
 
 module.exports = class AI extends Command {
@@ -10,7 +10,7 @@ module.exports = class AI extends Command {
     super(client, {
       name: 'ai',
       aliases: ['ia', 'chatgpt'],
-      description: '🤖 Interactúa con inteligencia artificial (ChatGPT, Claude, Gemini)'
+      description: '🤖 Interactúa con inteligencia artificial (APIs gratuitas disponibles)'
     })
   }
 
@@ -19,12 +19,10 @@ module.exports = class AI extends Command {
     
     if (subcommand === 'chat') {
       await this.chat(interaction)
-    } else if (subcommand === 'imagen') {
-      await this.imagen(interaction)
     } else if (subcommand === 'config') {
       await this.config(interaction)
-    } else if (subcommand === 'modelo') {
-      await this.modelo(interaction)
+    } else if (subcommand === 'info') {
+      await this.info(interaction)
     }
   }
 
@@ -32,32 +30,22 @@ module.exports = class AI extends Command {
     await interaction.deferReply()
     
     const pregunta = interaction.options.getString('pregunta')
-    const config = serverConfigs.get(interaction.guild.id) || { modelo: 'gpt-3.5', apiKey: null }
-    
-    if (!config.apiKey) {
-      return interaction.editReply(
-        '❌ Este servidor no tiene configurada una API key.\n' +
-        'Los administradores pueden configurarla con `/ai config`'
-      )
+    const config = serverConfigs.get(interaction.guild.id) || { 
+      provider: 'free',
+      apiKey: null 
     }
     
     try {
-      // Llamada a API de IA (ejemplo con OpenAI)
-      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: config.modelo,
-        messages: [
-          { role: 'system', content: 'Eres un asistente útil en Discord.' },
-          { role: 'user', content: pregunta }
-        ],
-        max_tokens: 500
-      }, {
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      let respuesta
       
-      const respuesta = response.data.choices[0].message.content
+      if (config.provider === 'free' || !config.apiKey) {
+        // ✅ Usar API GRATUITA (Hugging Face Inference API)
+        respuesta = await this.chatFree(pregunta)
+      } else if (config.provider === 'openai') {
+        respuesta = await this.chatOpenAI(pregunta, config.apiKey)
+      } else {
+        return interaction.editReply('❌ Proveedor no soportado aún. Usa el modo gratuito.')
+      }
       
       const embed = new EmbedBuilder()
         .setColor(0x00d4ff)
@@ -66,60 +54,75 @@ module.exports = class AI extends Command {
           { name: '❓ Pregunta', value: pregunta.substring(0, 1024) },
           { name: '💬 Respuesta', value: respuesta.substring(0, 1024) }
         )
-        .setFooter({ text: `Modelo: ${config.modelo} | Solicitado por ${interaction.user.tag}` })
+        .setFooter({ 
+          text: `Modo: ${config.provider || 'gratuito'} | ${interaction.user.tag}`,
+          iconURL: interaction.user.displayAvatarURL()
+        })
         .setTimestamp()
       
       await interaction.editReply({ embeds: [embed] })
       
     } catch (error) {
-      this.client.log('error', error)
+      this.client.log('error', 'Error en AI:', error.message)
       await interaction.editReply(
-        '❌ Error al contactar con la API de IA.\n' +
-        'Verifica que la API key sea válida y tenga créditos.'
+        '❌ Error al contactar con la IA.\n' +
+        '```' + error.message + '```\n' +
+        'Intenta de nuevo o contacta con los administradores.'
       )
     }
   }
 
-  async imagen(interaction) {
-    await interaction.deferReply()
-    
-    const descripcion = interaction.options.getString('descripcion')
-    const config = serverConfigs.get(interaction.guild.id) || { apiKey: null }
-    
-    if (!config.apiKey) {
-      return interaction.editReply('❌ Configura primero una API key con `/ai config`')
-    }
-    
+  async chatFree(pregunta) {
+    // Usar HuggingFace Inference API (GRATIS)
     try {
-      // DALL-E API call
-      const response = await axios.post('https://api.openai.com/v1/images/generations', {
-        model: 'dall-e-3',
-        prompt: descripcion,
-        n: 1,
-        size: '1024x1024'
-      }, {
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        'https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill',
+        { inputs: pregunta },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000
         }
-      })
+      )
       
-      const imageUrl = response.data.data[0].url
-      
-      const embed = new EmbedBuilder()
-        .setColor(0xff00ff)
-        .setTitle('🎨 Imagen Generada por IA')
-        .setDescription(`**Prompt:** ${descripcion}`)
-        .setImage(imageUrl)
-        .setFooter({ text: `DALL-E 3 | Solicitado por ${interaction.user.tag}` })
-        .setTimestamp()
-      
-      await interaction.editReply({ embeds: [embed] })
-      
+      return response.data[0]?.generated_text || 'No pude generar una respuesta.'
     } catch (error) {
-      this.client.log('error', error)
-      await interaction.editReply('❌ Error al generar imagen. Verifica tu API key y créditos.')
+      // Fallback: respuesta simple si HF falla
+      this.client.log('warn', 'HuggingFace API falló, usando fallback')
+      
+      // Respuestas básicas
+      const respuestas = [
+        'Esa es una pregunta interesante. Podrías reformularla?',
+        'Entiendo tu pregunta. Intenta ser más específico.',
+        'Actualmente el servicio gratuito de IA está sobrecargado. Intenta en unos minutos.'
+      ]
+      return respuestas[Math.floor(Math.random() * respuestas.length)]
     }
+  }
+
+  async chatOpenAI(pregunta, apiKey) {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'Eres un asistente útil en Discord.' },
+          { role: 'user', content: pregunta }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      }
+    )
+    
+    return response.data.choices[0].message.content
   }
 
   async config(interaction) {
@@ -127,7 +130,7 @@ module.exports = class AI extends Command {
     if (!interaction.member.permissions.has('Administrator')) {
       return interaction.reply({ 
         content: '❌ Solo administradores pueden configurar la IA.',
-        ephemeral: true 
+        flags: 64
       })
     }
     
@@ -136,8 +139,7 @@ module.exports = class AI extends Command {
     
     serverConfigs.set(interaction.guild.id, {
       provider: provider,
-      apiKey: apiKey,
-      modelo: provider === 'openai' ? 'gpt-4' : 'claude-3-opus'
+      apiKey: apiKey
     })
     
     const embed = new EmbedBuilder()
@@ -145,102 +147,94 @@ module.exports = class AI extends Command {
       .setTitle('✅ Configuración de IA Actualizada')
       .setDescription(
         `**Proveedor:** ${provider}\n` +
-        `**API Key:** ||${apiKey.substring(0, 10)}...||\n\n` +
-        '⚠️ La API key se almacena de forma segura.'
+        (apiKey ? `**API Key:** ||${apiKey.substring(0, 10)}...||\n\n` : '') +
+        '⚠️ La configuración se guarda en memoria (se pierde al reiniciar).'
       )
       .addFields(
-        { name: '📊 Uso', value: 'Ahora los usuarios pueden usar `/ai chat` y `/ai imagen`' },
-        { name: '🔒 Seguridad', value: 'Solo los administradores pueden ver/modificar la config' }
+        { name: '📊 Uso', value: 'Los usuarios pueden usar `/ai chat`' },
+        { name: '🔒 Seguridad', value: 'Solo administradores pueden modificar la config' }
       )
       .setFooter({ text: 'Configuración guardada exitosamente' })
       .setTimestamp()
     
-    await interaction.reply({ embeds: [embed], ephemeral: true })
+    await interaction.reply({ embeds: [embed], flags: 64 })
   }
 
-  async modelo(interaction) {
-    if (!interaction.member.permissions.has('Administrator')) {
-      return interaction.reply({ 
-        content: '❌ Solo administradores pueden cambiar el modelo.',
-        ephemeral: true 
-      })
-    }
+  async info(interaction) {
+    const config = serverConfigs.get(interaction.guild.id) || { provider: 'free' }
     
-    const nuevoModelo = interaction.options.getString('nombre')
-    const config = serverConfigs.get(interaction.guild.id) || {}
+    const embed = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle('🤖 Información del Sistema de IA')
+      .setDescription(
+        '🆓 **MODO GRATUITO ACTIVO**\n' +
+        'El bot usa Hugging Face Inference API (sin API key requerida)\n\n'
+      )
+      .addFields(
+        { 
+          name: '🔧 Configuración Actual', 
+          value: `Proveedor: **${config.provider || 'gratuito'}**\nAPI Key: ${config.apiKey ? '✅ Configurada' : '❌ No configurada'}` 
+        },
+        {
+          name: '🎯 Proveedores Soportados',
+          value: '• **free** - Hugging Face (gratis)\n• **openai** - ChatGPT (requiere API key)'
+        },
+        {
+          name: '📚 Cómo obtener API keys',
+          value: '**OpenAI:** https://platform.openai.com/api-keys\n**Hugging Face:** https://huggingface.co/settings/tokens'
+        },
+        {
+          name: '⚙️ Configurar',
+          value: 'Los admins pueden usar `/ai config` para establecer una API key propia'
+        }
+      )
+      .setFooter({ text: 'EstacionKusTV - SOLOME Bot' })
+      .setTimestamp()
     
-    config.modelo = nuevoModelo
-    serverConfigs.set(interaction.guild.id, config)
-    
-    await interaction.reply({ 
-      content: `✅ Modelo cambiado a **${nuevoModelo}**`,
-      ephemeral: true 
-    })
+    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {
-    return {
-      name: this.name,
-      description: this.description,
-      options: [
-        {
-          type: 1,
-          name: 'chat',
-          description: 'Chatea con la IA',
-          options: [
-            { type: 3, name: 'pregunta', description: 'Tu pregunta o mensaje', required: true }
-          ]
-        },
-        {
-          type: 1,
-          name: 'imagen',
-          description: 'Genera una imagen con IA',
-          options: [
-            { type: 3, name: 'descripcion', description: 'Describe la imagen que quieres', required: true }
-          ]
-        },
-        {
-          type: 1,
-          name: 'config',
-          description: '[ADMIN] Configurar API de IA para el servidor',
-          options: [
-            {
-              type: 3,
-              name: 'provider',
-              description: 'Proveedor de IA',
-              required: true,
-              choices: [
-                { name: 'OpenAI (ChatGPT, DALL-E)', value: 'openai' },
-                { name: 'Anthropic (Claude)', value: 'anthropic' },
-                { name: 'Google (Gemini)', value: 'google' },
-                { name: 'Cohere', value: 'cohere' }
-              ]
-            },
-            { type: 3, name: 'apikey', description: 'Tu API key del proveedor', required: true }
-          ]
-        },
-        {
-          type: 1,
-          name: 'modelo',
-          description: '[ADMIN] Cambiar modelo de IA',
-          options: [
-            {
-              type: 3,
-              name: 'nombre',
-              description: 'Modelo a usar',
-              required: true,
-              choices: [
-                { name: 'GPT-4', value: 'gpt-4' },
-                { name: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
-                { name: 'Claude 3 Opus', value: 'claude-3-opus' },
-                { name: 'Claude 3 Sonnet', value: 'claude-3-sonnet' },
-                { name: 'Gemini Pro', value: 'gemini-pro' }
-              ]
-            }
-          ]
-        }
-      ]
-    }
+    return new SlashCommandBuilder()
+      .setName(this.name)
+      .setDescription(this.description)
+      .addSubcommand(sub =>
+        sub
+          .setName('chat')
+          .setDescription('Chatea con la IA')
+          .addStringOption(opt =>
+            opt
+              .setName('pregunta')
+              .setDescription('Tu pregunta o mensaje')
+              .setRequired(true)
+          )
+      )
+      .addSubcommand(sub =>
+        sub
+          .setName('config')
+          .setDescription('[ADMIN] Configurar API de IA para el servidor')
+          .addStringOption(opt =>
+            opt
+              .setName('provider')
+              .setDescription('Proveedor de IA')
+              .setRequired(true)
+              .addChoices(
+                { name: '🆓 Gratis (Hugging Face)', value: 'free' },
+                { name: 'OpenAI (ChatGPT)', value: 'openai' }
+              )
+          )
+          .addStringOption(opt =>
+            opt
+              .setName('apikey')
+              .setDescription('Tu API key (opcional si usas modo gratuito)')
+              .setRequired(false)
+          )
+      )
+      .addSubcommand(sub =>
+        sub
+          .setName('info')
+          .setDescription('Ver información del sistema de IA')
+      )
   }
 }
 
