@@ -5,22 +5,23 @@ module.exports = class Ping extends Command {
   constructor (client) {
     super(client, {
       name: 'ping',
-      aliases: ['latencia', 'latency'],
-      description: 'Muestra la latencia del bot y de la API de Discord'
+      aliases: ['latency', 'ms'],
+      description: '🏓 Muestra la latencia del bot y la API de Discord'
     })
   }
 
   async runSlash (interaction) {
-    const sent = await interaction.reply({ content: '🏓 Pong!', fetchReply: true })
-    const latency = sent.createdTimestamp - interaction.createdTimestamp
-    const apiLatency = Math.round(this.client.ws.ping)
+    const sent = await interaction.reply({ content: '🏓 Calculando ping...', fetchReply: true })
+    
+    const botPing = sent.createdTimestamp - interaction.createdTimestamp
+    const apiPing = Math.round(this.client.ws.ping)
 
     const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
+      .setColor(apiPing < 200 ? 0x00ff00 : apiPing < 500 ? 0xfaa61a : 0xff0000)
       .setTitle('🏓 Pong!')
       .addFields(
-        { name: '⏱️ Latencia del Bot', value: `${latency}ms`, inline: true },
-        { name: '🔗 Latencia de la API', value: `${apiLatency}ms`, inline: true }
+        { name: '🤖 Latencia del Bot', value: `${botPing}ms`, inline: true },
+        { name: '📊 API de Discord', value: `${apiPing}ms`, inline: true }
       )
       .setFooter({ text: `Solicitado por ${interaction.user.tag}` })
       .setTimestamp()
