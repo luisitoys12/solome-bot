@@ -1,24 +1,23 @@
 const express = require('express')
 const path = require('path')
 const fs = require('fs')
+const { load, save } = require('../src/utils/database.js')
 
 const app = express()
 const PORT = process.env.DASHBOARD_PORT || 3000
 
 // Middleware
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')))
 
-// API para obtener estadísticas del bot
+// API: Obtener estadísticas del bot
 app.get('/api/stats', (req, res) => {
   try {
     const client = global.botClient
     
     if (!client || !client.user) {
-      return res.json({
-        online: false,
-        message: 'Bot no conectado'
-      })
+      return res.json({ online: false, message: 'Bot no conectado' })
     }
 
     const stats = {
@@ -41,14 +40,11 @@ app.get('/api/stats', (req, res) => {
   }
 })
 
-// API para obtener lista de servidores
+// API: Obtener servidores
 app.get('/api/guilds', (req, res) => {
   try {
     const client = global.botClient
-    
-    if (!client) {
-      return res.status(503).json({ error: 'Bot no disponible' })
-    }
+    if (!client) return res.status(503).json({ error: 'Bot no disponible' })
 
     const guilds = client.guilds.cache.map(guild => ({
       id: guild.id,
@@ -64,11 +60,10 @@ app.get('/api/guilds', (req, res) => {
   }
 })
 
-// API para obtener comandos
+// API: Obtener comandos
 app.get('/api/commands', (req, res) => {
   try {
     const client = global.botClient
-    
     if (!client || !client.slashCommands) {
       return res.status(503).json({ error: 'Bot no disponible' })
     }
@@ -76,7 +71,8 @@ app.get('/api/commands', (req, res) => {
     const commands = Array.from(client.slashCommands.values()).map(cmd => ({
       name: cmd.name,
       description: cmd.description,
-      aliases: cmd.aliases || []
+      aliases: cmd.aliases || [],
+      category: cmd.category || 'general'
     }))
 
     res.json(commands)
@@ -85,26 +81,92 @@ app.get('/api/commands', (req, res) => {
   }
 })
 
-// API para obtener logs recientes
-app.get('/api/logs', (req, res) => {
+// API: Comandos custom - Listar
+app.get('/api/custom-commands', (req, res) => {
   try {
-    const logsPath = path.join(__dirname, '../logs/bot.log')
-    
-    if (fs.existsSync(logsPath)) {
-      const logs = fs.readFileSync(logsPath, 'utf-8')
-      const lines = logs.split('\n').filter(l => l.trim()).slice(-50)
-      res.json({ logs: lines })
-    } else {
-      res.json({ logs: ['No hay logs disponibles'] })
-    }
+    const customCommands = load('custom-commands', {})
+    res.json(customCommands)
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
 })
 
-// Ruta principal
+// API: Comandos custom - Crear/Actualizar
+app.post('/api/custom-commands', (req, res) => {
+  try {
+    const { name, response, enabled = true } = req.body
+    
+    if (!name || !response) {
+      return res.status(400).json({ error: 'Faltan campos requeridos' })
+    }
+
+    const customCommands = load('custom-commands', {})
+    customCommands[name] = { response, enabled, createdAt: Date.now() }
+    save('custom-commands', customCommands)
+
+    res.json({ success: true, command: customCommands[name] })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// API: Comandos custom - Eliminar
+app.delete('/api/custom-commands/:name', (req, res) => {
+  try {
+    const customCommands = load('custom-commands', {})
+    delete customCommands[req.params.name]
+    save('custom-commands', customCommands)
+    res.json({ success: true })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// API: Configuración de módulos
+app.get('/api/modules', (req, res) => {
+  try {
+    const modules = load('modules-config', {
+      music: { enabled: true },
+      radio: { enabled: true },
+      economy: { enabled: true },
+      leveling: { enabled: true },
+      moderation: { enabled: false },
+      ai: { enabled: true },
+      games: { enabled: true }
+    })
+    res.json(modules)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// API: Actualizar módulo
+app.post('/api/modules/:module', (req, res) => {
+  try {
+    const modules = load('modules-config', {})
+    modules[req.params.module] = req.body
+    save('modules-config', modules)
+    res.json({ success: true })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Rutas de vistas
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
+})
+
+app.get('/commands', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'commands.html'))
+})
+
+app.get('/modules', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'modules.html'))
+})
+
+app.get('/custom-commands', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'custom-commands.html'))
 })
 
 // Iniciar servidor

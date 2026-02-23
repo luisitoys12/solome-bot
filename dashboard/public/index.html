@@ -3,294 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOLOME Bot Dashboard</title>
-    <link rel="stylesheet" href="/styles.css">
+    <title>SOLOME Bot - Dashboard</title>
+    <link rel="stylesheet" href="/css/main.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 </head>
 <body>
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+    <nav class="sidebar">
         <div class="sidebar-header">
-            <div class="logo-container">
-                <span class="logo-icon">🤖</span>
-                <h1 class="logo-text">SOLOME</h1>
-            </div>
-            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            <span class="logo-icon">🤖</span>
+            <h2>SOLOME</h2>
         </div>
         
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-page="dashboard">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="#" class="nav-item" data-page="servers">
-                <span class="nav-icon">🏛️</span>
-                <span class="nav-text">Servidores</span>
-            </a>
-            <a href="#" class="nav-item" data-page="commands">
-                <span class="nav-icon">⚡</span>
-                <span class="nav-text">Comandos</span>
-            </a>
-            <a href="#" class="nav-item" data-page="custom-commands">
-                <span class="nav-icon">🛠️</span>
-                <span class="nav-text">Comandos Custom</span>
-            </a>
-            <a href="#" class="nav-item" data-page="moderation">
-                <span class="nav-icon">🛡️</span>
-                <span class="nav-text">Moderación</span>
-            </a>
-            <a href="#" class="nav-item" data-page="music">
-                <span class="nav-icon">🎵</span>
-                <span class="nav-text">Música</span>
-            </a>
-            <a href="#" class="nav-item" data-page="economy">
-                <span class="nav-icon">💰</span>
-                <span class="nav-text">Economía</span>
-            </a>
-            <a href="#" class="nav-item" data-page="logs">
-                <span class="nav-icon">📝</span>
-                <span class="nav-text">Logs</span>
-            </a>
-            <a href="#" class="nav-item" data-page="settings">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-text">Configuración</span>
-            </a>
-        </nav>
-        
+        <ul class="nav-menu">
+            <li><a href="/" class="nav-link active">
+                <span class="icon">📊</span>
+                <span>Dashboard</span>
+            </a></li>
+            <li><a href="/commands" class="nav-link">
+                <span class="icon">⚡</span>
+                <span>Comandos</span>
+            </a></li>
+            <li><a href="/custom-commands" class="nav-link">
+                <span class="icon">🛠️</span>
+                <span>Comandos Custom</span>
+            </a></li>
+            <li><a href="/modules" class="nav-link">
+                <span class="icon">🧩</span>
+                <span>Módulos</span>
+            </a></li>
+        </ul>
+
         <div class="sidebar-footer">
             <div class="bot-status" id="botStatus">
                 <span class="status-dot"></span>
                 <span class="status-text">Cargando...</span>
             </div>
         </div>
-    </aside>
+    </nav>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <h2 class="page-title" id="pageTitle">Dashboard</h2>
-            </div>
-            <div class="header-right">
-                <div class="search-box">
-                    <input type="text" placeholder="Buscar..." id="searchBox">
-                    <span class="search-icon">🔍</span>
-                </div>
-                <button class="btn btn-primary" id="refreshBtn">🔄 Actualizar</button>
-            </div>
+        <header class="page-header">
+            <h1>📊 Dashboard</h1>
+            <p>Panel de control principal de SOLOME Bot</p>
         </header>
 
-        <!-- Content Pages -->
-        <div class="content-wrapper">
-            <!-- Dashboard Page -->
-            <div class="page active" id="page-dashboard">
-                <!-- Stats Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-blue">🏠</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="statServers">-</div>
-                            <div class="stat-label">Servidores</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-green">👥</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="statUsers">-</div>
-                            <div class="stat-label">Usuarios</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-purple">⚡</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="statCommands">-</div>
-                            <div class="stat-label">Comandos</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-orange">📊</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="statPing">-</div>
-                            <div class="stat-label">Ping</div>
-                        </div>
-                    </div>
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon">🏠</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="servers">-</div>
+                    <div class="stat-label">Servidores</div>
                 </div>
-
-                <!-- Charts Row -->
-                <div class="cards-row">
-                    <div class="card chart-card">
-                        <h3 class="card-title">📈 Actividad del Bot</h3>
-                        <div class="chart-placeholder" id="activityChart">
-                            <canvas id="activityCanvas"></canvas>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3 class="card-title">🔥 Comandos Más Usados</h3>
-                        <div class="top-commands" id="topCommands">
-                            <div class="command-stat">
-                                <span class="command-name">/play</span>
-                                <span class="command-count">1,234 usos</span>
-                            </div>
-                            <div class="command-stat">
-                                <span class="command-name">/radio</span>
-                                <span class="command-count">987 usos</span>
-                            </div>
-                            <div class="command-stat">
-                                <span class="command-name">/help</span>
-                                <span class="command-count">756 usos</span>
-                            </div>
-                        </div>
-                    </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="users">-</div>
+                    <div class="stat-label">Usuarios</div>
                 </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="commands">-</div>
+                    <div class="stat-label">Comandos</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📡</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="ping">-</div>
+                    <div class="stat-label">Ping</div>
+                </div>
+            </div>
+        </div>
 
-                <!-- Bot Info -->
-                <div class="card">
-                    <h3 class="card-title">ℹ️ Información del Bot</h3>
-                    <div class="info-grid" id="botInfo">
-                        <div class="info-item">
-                            <span class="info-label">Nombre</span>
-                            <span class="info-value" id="botName">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Tiempo Activo</span>
-                            <span class="info-value" id="botUptime">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Memoria</span>
-                            <span class="info-value" id="botMemory">-</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Versión</span>
-                            <span class="info-value" id="botVersion">-</span>
-                        </div>
+        <!-- Bot Info Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🤖 Información del Bot</h2>
+            </div>
+            <div class="card-body">
+                <div class="info-grid" id="botInfo">
+                    <div class="info-item">
+                        <span class="info-label">Nombre:</span>
+                        <span class="info-value" id="botName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tiempo activo:</span>
+                        <span class="info-value" id="uptime">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Memoria:</span>
+                        <span class="info-value" id="memory">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Versión:</span>
+                        <span class="info-value" id="version">-</span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Custom Commands Page -->
-            <div class="page" id="page-custom-commands">
-                <div class="page-header">
-                    <h3>🛠️ Comandos Personalizados</h3>
-                    <button class="btn btn-success" id="createCommandBtn">➕ Crear Comando</button>
-                </div>
-
-                <div class="card">
-                    <div class="table-container" id="customCommandsTable">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Comando</th>
-                                    <th>Respuesta</th>
-                                    <th>Tipo</th>
-                                    <th>Usos</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="customCommandsBody">
-                                <tr>
-                                    <td colspan="5" class="text-center">No hay comandos personalizados</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Servers List -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🏠 Servidores</h2>
             </div>
-
-            <!-- Servers Page -->
-            <div class="page" id="page-servers">
-                <div class="servers-grid" id="serversGrid">
+            <div class="card-body">
+                <div class="servers-grid" id="serversList">
                     <div class="loading">Cargando servidores...</div>
-                </div>
-            </div>
-
-            <!-- Commands Page -->
-            <div class="page" id="page-commands">
-                <div class="commands-container" id="commandsContainer">
-                    <div class="loading">Cargando comandos...</div>
-                </div>
-            </div>
-
-            <!-- Logs Page -->
-            <div class="page" id="page-logs">
-                <div class="card">
-                    <div class="logs-container" id="logsContainer">
-                        <div class="loading">Cargando logs...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Other pages -->
-            <div class="page" id="page-moderation">
-                <div class="card">
-                    <h3>🛡️ Sistema de Moderación</h3>
-                    <p class="text-muted">Próximamente: Auto-mod, filtros, advertencias...</p>
-                </div>
-            </div>
-
-            <div class="page" id="page-music">
-                <div class="card">
-                    <h3>🎵 Sistema de Música</h3>
-                    <p class="text-muted">Próximamente: Cola global, playlists, ecualizador...</p>
-                </div>
-            </div>
-
-            <div class="page" id="page-economy">
-                <div class="card">
-                    <h3>💰 Sistema de Economía</h3>
-                    <p class="text-muted">Próximamente: Tienda, leaderboard, configuración...</p>
-                </div>
-            </div>
-
-            <div class="page" id="page-settings">
-                <div class="card">
-                    <h3>⚙️ Configuración</h3>
-                    <p class="text-muted">Próximamente: Prefijos, idioma, módulos...</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal for Create Command -->
-    <div class="modal" id="createCommandModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>➕ Crear Comando Personalizado</h3>
-                <button class="modal-close" id="closeModal">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nombre del Comando</label>
-                    <input type="text" id="cmdName" placeholder="hola" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Tipo de Respuesta</label>
-                    <select id="cmdType" class="form-input">
-                        <option value="text">Texto Simple</option>
-                        <option value="embed">Embed</option>
-                        <option value="action">Acción</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Respuesta</label>
-                    <textarea id="cmdResponse" placeholder="¡Hola {user}!" class="form-textarea" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Permisos Requeridos</label>
-                    <select id="cmdPermissions" class="form-input">
-                        <option value="everyone">Todos</option>
-                        <option value="moderator">Moderadores</option>
-                        <option value="admin">Administradores</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelBtn">Cancelar</button>
-                <button class="btn btn-success" id="saveCommandBtn">Guardar Comando</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="/script.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>
