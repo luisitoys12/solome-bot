@@ -3,125 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOLOME Bot - Dashboard</title>
-    <link rel="stylesheet" href="/css/main.css">
+    <title>SOLOME Bot Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 </head>
 <body>
     <!-- Sidebar -->
-    <nav class="sidebar">
+    <aside class="sidebar">
         <div class="sidebar-header">
-            <span class="logo-icon">🤖</span>
-            <h2>SOLOME</h2>
-        </div>
-        
-        <ul class="nav-menu">
-            <li><a href="/" class="nav-link active">
-                <span class="icon">📊</span>
-                <span>Dashboard</span>
-            </a></li>
-            <li><a href="/commands" class="nav-link">
-                <span class="icon">⚡</span>
-                <span>Comandos</span>
-            </a></li>
-            <li><a href="/custom-commands" class="nav-link">
-                <span class="icon">🛠️</span>
-                <span>Comandos Custom</span>
-            </a></li>
-            <li><a href="/modules" class="nav-link">
-                <span class="icon">🧩</span>
-                <span>Módulos</span>
-            </a></li>
-        </ul>
-
-        <div class="sidebar-footer">
-            <div class="bot-status" id="botStatus">
-                <span class="status-dot"></span>
-                <span class="status-text">Cargando...</span>
+            <div class="logo">
+                <span class="logo-icon">🤖</span>
+                <span class="logo-text">SOLOME</span>
             </div>
         </div>
-    </nav>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+                </svg>
+                <span>Servidores</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>Comandos</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                </svg>
+                <span>Logs</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot"></div>
+                <span class="status-text">Conectando...</span>
+            </div>
+        </div>
+    </aside>
 
     <!-- Main Content -->
     <main class="main-content">
-        <header class="page-header">
-            <h1>📊 Dashboard</h1>
-            <p>Panel de control principal de SOLOME Bot</p>
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="page-title">
+                <h1>Dashboard General</h1>
+                <p class="subtitle">Bienvenido al panel de control de SOLOME Bot</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="btn-icon" onclick="location.reload()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                </button>
+            </div>
         </header>
 
         <!-- Stats Grid -->
-        <div class="stats-grid" id="statsGrid">
+        <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">🏠</div>
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+                    </svg>
+                </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="servers">-</div>
-                    <div class="stat-label">Servidores</div>
+                    <p class="stat-label">Servidores</p>
+                    <h3 class="stat-value" id="serversCount">-</h3>
+                    <span class="stat-change positive">+2 esta semana</span>
                 </div>
             </div>
+
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="users">-</div>
-                    <div class="stat-label">Usuarios</div>
+                    <p class="stat-label">Usuarios</p>
+                    <h3 class="stat-value" id="usersCount">-</h3>
+                    <span class="stat-change positive">+150 esta semana</span>
                 </div>
             </div>
+
             <div class="stat-card">
-                <div class="stat-icon">⚡</div>
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/>
+                    </svg>
+                </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="commands">-</div>
-                    <div class="stat-label">Comandos</div>
+                    <p class="stat-label">Comandos</p>
+                    <h3 class="stat-value" id="commandsCount">-</h3>
+                    <span class="stat-change">70+ disponibles</span>
                 </div>
             </div>
+
             <div class="stat-card">
-                <div class="stat-icon">📡</div>
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.17 17.98 14.21 19 12 19z"/>
+                    </svg>
+                </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="ping">-</div>
-                    <div class="stat-label">Ping</div>
+                    <p class="stat-label">Latencia</p>
+                    <h3 class="stat-value" id="pingValue">-</h3>
+                    <span class="stat-change positive">Excelente</span>
                 </div>
             </div>
         </div>
 
-        <!-- Bot Info Card -->
-        <div class="card">
-            <div class="card-header">
-                <h2>🤖 Información del Bot</h2>
-            </div>
-            <div class="card-body">
-                <div class="info-grid" id="botInfo">
-                    <div class="info-item">
-                        <span class="info-label">Nombre:</span>
-                        <span class="info-value" id="botName">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Tiempo activo:</span>
-                        <span class="info-value" id="uptime">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Memoria:</span>
-                        <span class="info-value" id="memory">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Versión:</span>
-                        <span class="info-value" id="version">-</span>
+        <!-- Content Cards -->
+        <div class="content-wrapper">
+            <!-- Bot Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🤖 Información del Bot</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid" id="botInfo">
+                        <div class="info-item">
+                            <span class="info-label">Nombre</span>
+                            <span class="info-value" id="botName">Cargando...</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tiempo Activo</span>
+                            <span class="info-value" id="uptime">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Memoria</span>
+                            <span class="info-value" id="memory">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Versión</span>
+                            <span class="info-value" id="version">4.0.0</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Servers List -->
-        <div class="card">
-            <div class="card-header">
-                <h2>🏠 Servidores</h2>
+            <!-- Servers List -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏠 Servidores Conectados</h2>
+                </div>
+                <div class="card-body">
+                    <div class="servers-grid" id="serversList">
+                        <div class="loading-state">Cargando servidores...</div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="servers-grid" id="serversList">
-                    <div class="loading">Cargando servidores...</div>
+
+            <!-- Commands List -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <h2>⚡ Comandos Disponibles</h2>
+                    <span class="badge" id="commandsBadge">70+</span>
+                </div>
+                <div class="card-body">
+                    <div class="commands-grid" id="commandsList">
+                        <div class="loading-state">Cargando comandos...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Logs -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <h2>📝 Actividad Reciente</h2>
+                    <button class="btn-text" onclick="document.getElementById('logsContainer').innerHTML = ''">
+                        Limpiar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="logs-terminal" id="logsContainer">
+                        <div class="loading-state">Cargando logs...</div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <script src="/js/main.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
