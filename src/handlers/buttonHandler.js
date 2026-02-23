@@ -1,5 +1,6 @@
-// Sistema completo de manejo de botones
+// Sistema completo de manejo de botones con música
 const { EmbedBuilder } = require('discord.js')
+const axios = require('axios')
 
 class ButtonHandler {
   constructor(client) {
@@ -17,6 +18,10 @@ class ButtonHandler {
     this.register('music_queue', this.handleMusicQueue.bind(this))
     this.register('music_shuffle', this.handleMusicShuffle.bind(this))
     this.register('music_loop', this.handleMusicLoop.bind(this))
+    this.register('music_previous', this.handleMusicPrevious.bind(this))
+    this.register('music_volume_up', this.handleMusicVolumeUp.bind(this))
+    this.register('music_volume_down', this.handleMusicVolumeDown.bind(this))
+    this.register('music_lyrics', this.handleMusicLyrics.bind(this))
     
     // Radio buttons
     this.register('radio_stop', this.handleRadioStop.bind(this))
@@ -25,29 +30,9 @@ class ButtonHandler {
     this.register(/^ttt_\d+_\d+$/, this.handleTicTacToe.bind(this))
     this.register(/^c4_\d+$/, this.handleConnect4.bind(this))
     
-    // Giveaway buttons
+    // Other buttons
     this.register('giveaway_join', this.handleGiveawayJoin.bind(this))
-    
-    // Ticket buttons
-    this.register('ticket_close', this.handleTicketClose.bind(this))
-    this.register('ticket_reopen', this.handleTicketReopen.bind(this))
-    this.register('ticket_delete', this.handleTicketDelete.bind(this))
-    
-    // Poll/vote buttons
     this.register(/^poll_\d+$/, this.handlePollVote.bind(this))
-    
-    // Confirmation buttons
-    this.register('confirm_yes', this.handleConfirmYes.bind(this))
-    this.register('confirm_no', this.handleConfirmNo.bind(this))
-    
-    // Pagination buttons
-    this.register('page_first', this.handlePageFirst.bind(this))
-    this.register('page_prev', this.handlePagePrev.bind(this))
-    this.register('page_next', this.handlePageNext.bind(this))
-    this.register('page_last', this.handlePageLast.bind(this))
-    
-    // Help/Commands buttons
-    this.register(/^help_.*/, this.handleHelpCategory.bind(this))
   }
 
   register(pattern, handler) {
@@ -57,7 +42,6 @@ class ButtonHandler {
   async handle(interaction) {
     const customId = interaction.customId
     
-    // Find matching handler
     for (const [pattern, handler] of this.handlers) {
       let matches = false
       
@@ -85,7 +69,6 @@ class ButtonHandler {
       }
     }
     
-    // No handler found
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
         content: '⚠️ Este botón ya no está disponible',
@@ -99,7 +82,7 @@ class ButtonHandler {
   // ==================== MUSIC HANDLERS ====================
   
   async handleMusicPause(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player || !player.queue.current) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
@@ -114,7 +97,7 @@ class ButtonHandler {
   }
 
   async handleMusicResume(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
@@ -129,7 +112,7 @@ class ButtonHandler {
   }
 
   async handleMusicSkip(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player || !player.queue.current) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
@@ -142,18 +125,18 @@ class ButtonHandler {
   }
 
   async handleMusicStop(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
     }
     
     player.destroy()
-    await interaction.reply({ content: '⏹️ Música detenida', flags: 64 })
+    await interaction.reply({ content: '⏹️ Música detenida y bot desconectado', flags: 64 })
   }
 
   async handleMusicQueue(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player || !player.queue.current) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
@@ -166,24 +149,31 @@ class ButtonHandler {
       .setColor(0x5865F2)
       .setTitle('📜 Cola de Reproducción')
       .setDescription(
-        `**Reproduciendo:**\n` +
-        `▶️ [${current.title}](${current.uri})\n\n` +
-        (queue.length > 0 ? `**Próximas ${queue.length}:**\n` +
-        queue.map((t, i) => `${i + 1}. [${t.title}](${t.uri})`).join('\n') : 'Cola vacía')
+        `**▶️ Reproduciendo:**\n` +
+        `[${current.title}](${current.uri}) - \`${this.formatDuration(current.duration)}\`\n` +
+        `Solicitado por: <@${current.requester.id}>\n\n` +
+        (queue.length > 0 ? `**📊 Próximas ${queue.length} canciones:**\n` +
+        queue.map((t, i) => `${i + 1}. [${t.title}](${t.uri}) - \`${this.formatDuration(t.duration)}\``).join('\n') : '🚨 Cola vacía')
       )
+      .addFields(
+        { name: '📋 Total en cola', value: `${player.queue.size} canciones`, inline: true },
+        { name: '⏱️ Duración total', value: this.formatDuration(player.queue.duration), inline: true },
+        { name: '🔁 Loop', value: player.trackRepeat ? 'Canción' : player.queueRepeat ? 'Cola' : 'Desactivado', inline: true }
+      )
+      .setFooter({ text: 'Mostrando máximo 10 canciones' })
     
     await interaction.reply({ embeds: [embed], flags: 64 })
   }
 
   async handleMusicShuffle(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
     }
     
     if (player.queue.size < 2) {
-      return interaction.reply({ content: '❌ Necesitas al menos 2 canciones', flags: 64 })
+      return interaction.reply({ content: '❌ Necesitas al menos 2 canciones en la cola', flags: 64 })
     }
     
     player.queue.shuffle()
@@ -191,30 +181,120 @@ class ButtonHandler {
   }
 
   async handleMusicLoop(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
     }
     
-    // Toggle loop
-    if (player.trackRepeat) {
+    // Cycle: Off -> Track -> Queue -> Off
+    if (!player.trackRepeat && !player.queueRepeat) {
+      player.setTrackRepeat(true)
+      await interaction.reply({ content: '🔂 Loop de canción activado', flags: 64 })
+    } else if (player.trackRepeat) {
       player.setTrackRepeat(false)
       player.setQueueRepeat(true)
       await interaction.reply({ content: '🔁 Loop de cola activado', flags: 64 })
-    } else if (player.queueRepeat) {
-      player.setQueueRepeat(false)
-      await interaction.reply({ content: '🔁 Loop desactivado', flags: 64 })
     } else {
-      player.setTrackRepeat(true)
-      await interaction.reply({ content: '🔂 Loop de canción activado', flags: 64 })
+      player.setQueueRepeat(false)
+      await interaction.reply({ content: '❌ Loop desactivado', flags: 64 })
+    }
+  }
+
+  async handleMusicPrevious(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    if (!player.queue.previous) {
+      return interaction.reply({ content: '❌ No hay canción anterior', flags: 64 })
+    }
+    
+    player.queue.unshift(player.queue.previous)
+    player.stop()
+    
+    await interaction.reply({ content: '⏮️ Reproduciendo canción anterior', flags: 64 })
+  }
+
+  async handleMusicVolumeUp(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    const newVolume = Math.min(player.volume + 10, 150)
+    player.setVolume(newVolume)
+    
+    await interaction.reply({ content: `🔊 Volumen: **${newVolume}%**`, flags: 64 })
+  }
+
+  async handleMusicVolumeDown(interaction) {
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player) {
+      return interaction.reply({ content: '❌ No hay música reproduciéndose', flags: 64 })
+    }
+    
+    const newVolume = Math.max(player.volume - 10, 0)
+    player.setVolume(newVolume)
+    
+    await interaction.reply({ content: `🔉 Volumen: **${newVolume}%**`, flags: 64 })
+  }
+
+  async handleMusicLyrics(interaction) {
+    await interaction.deferReply({ flags: 64 })
+    
+    const player = this.client.manager?.players.get(interaction.guild.id)
+    
+    if (!player || !player.queue.current) {
+      return interaction.editReply('❌ No hay música reproduciéndose')
+    }
+    
+    const track = player.queue.current
+    const query = `${track.author} ${track.title}`
+    
+    try {
+      let lyrics = await this.getLyrics(query)
+      
+      if (!lyrics) {
+        return interaction.editReply(`❌ No se encontraron letras para: **${track.title}**`)
+      }
+      
+      // Limitar a 4000 caracteres
+      if (lyrics.length > 4000) {
+        lyrics = lyrics.substring(0, 3997) + '...'
+      }
+      
+      const embed = new EmbedBuilder()
+        .setColor(0x5865F2)
+        .setTitle(`📝 Letras: ${track.title}`)
+        .setDescription(lyrics)
+        .setThumbnail(track.displayThumbnail('default'))
+        .setFooter({ text: `Artista: ${track.author}` })
+      
+      await interaction.editReply({ embeds: [embed] })
+      
+    } catch (error) {
+      this.client.log('error', 'Lyrics error:', error)
+      await interaction.editReply('❌ Error al obtener las letras')
+    }
+  }
+
+  async getLyrics(query) {
+    try {
+      const response = await axios.get(`https://some-random-api.com/lyrics?title=${encodeURIComponent(query)}`)
+      return response.data?.lyrics || null
+    } catch (error) {
+      return null
     }
   }
 
   // ==================== RADIO HANDLERS ====================
   
   async handleRadioStop(interaction) {
-    // Buscar en el comando de radio
     const radioCommand = this.client.slashCommands.get('radio')
     if (!radioCommand) {
       return interaction.reply({ content: '❌ Comando de radio no disponible', flags: 64 })
@@ -233,93 +313,33 @@ class ButtonHandler {
     await interaction.reply({ content: '⏹️ Radio detenida', flags: 64 })
   }
 
-  // ==================== GAME HANDLERS ====================
+  // ==================== UTILITY ====================
   
-  async handleTicTacToe(interaction) {
-    // Implementación del juego se maneja en el comando
-    const gameData = interaction.message.embeds[0]?.footer?.text
-    if (!gameData) {
-      return interaction.reply({ content: '❌ Juego no válido', flags: 64 })
-    }
+  formatDuration(ms) {
+    const seconds = Math.floor((ms / 1000) % 60)
+    const minutes = Math.floor((ms / (1000 * 60)) % 60)
+    const hours = Math.floor(ms / (1000 * 60 * 60))
     
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  async handleTicTacToe(interaction) {
     await interaction.deferUpdate()
-    // El comando tictactoe maneja la lógica
   }
 
   async handleConnect4(interaction) {
     await interaction.deferUpdate()
-    // El comando connect4 maneja la lógica
   }
 
-  // ==================== GIVEAWAY HANDLERS ====================
-  
   async handleGiveawayJoin(interaction) {
-    await interaction.reply({
-      content: '🎉 ¡Te has unido al sorteo!',
-      flags: 64
-    })
+    await interaction.reply({ content: '🎉 ¡Te has unido al sorteo!', flags: 64 })
   }
 
-  // ==================== TICKET HANDLERS ====================
-  
-  async handleTicketClose(interaction) {
-    await interaction.reply('🔒 Cerrando ticket...')
-    // Lógica de cierre se maneja en el comando
-  }
-
-  async handleTicketReopen(interaction) {
-    await interaction.reply('🔓 Reabriendo ticket...')
-  }
-
-  async handleTicketDelete(interaction) {
-    await interaction.reply('🗑️ Eliminando ticket en 5 segundos...')
-    setTimeout(() => {
-      interaction.channel.delete().catch(() => {})
-    }, 5000)
-  }
-
-  // ==================== POLL HANDLERS ====================
-  
   async handlePollVote(interaction) {
-    await interaction.reply({
-      content: '✅ Voto registrado',
-      flags: 64
-    })
-  }
-
-  // ==================== CONFIRMATION HANDLERS ====================
-  
-  async handleConfirmYes(interaction) {
-    await interaction.reply({ content: '✅ Confirmado', flags: 64 })
-  }
-
-  async handleConfirmNo(interaction) {
-    await interaction.reply({ content: '❌ Cancelado', flags: 64 })
-  }
-
-  // ==================== PAGINATION HANDLERS ====================
-  
-  async handlePageFirst(interaction) {
-    await interaction.deferUpdate()
-  }
-
-  async handlePagePrev(interaction) {
-    await interaction.deferUpdate()
-  }
-
-  async handlePageNext(interaction) {
-    await interaction.deferUpdate()
-  }
-
-  async handlePageLast(interaction) {
-    await interaction.deferUpdate()
-  }
-
-  // ==================== HELP HANDLERS ====================
-  
-  async handleHelpCategory(interaction) {
-    await interaction.deferUpdate()
-    // El comando help maneja el cambio de categoría
+    await interaction.reply({ content: '✅ Voto registrado', flags: 64 })
   }
 }
 

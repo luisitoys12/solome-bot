@@ -1,270 +1,168 @@
+// SOLOME Bot - Main Entry Point
 require('dotenv').config()
-const { Client, GatewayIntentBits, Partials, Collection, REST, Routes } = require('discord.js')
+const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js')
 const fs = require('fs')
 const path = require('path')
+const MusicManager = require('./utils/musicManager.js')
 
 // Crear cliente de Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages
   ],
-  partials: [Partials.Channel, Partials.Message]
+  partials: [
+    Partials.Channel,
+    Partials.Message,
+    Partials.User,
+    Partials.GuildMember
+  ]
 })
 
-// Collections para comandos
+// Colecciones
 client.slashCommands = new Collection()
-client.commands = new Collection()
+client.aliases = new Collection()
 
-// Logger simple
-client.log = (level, ...args) => {
+// Logger
+client.log = (type, ...args) => {
   const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
-  const prefix = {
-    info: '✅',
-    error: '❌',
-    warn: '⚠️',
-    debug: '🔍'
-  }[level] || '💬'
-  console.log(`[${timestamp}] ${prefix}`, ...args)
+  const types = {
+    'error': '\x1b[31m❌ ERROR\x1b[0m',
+    'warn': '\x1b[33m⚠️  WARN\x1b[0m',
+    'info': '\x1b[36mℹ️  INFO\x1b[0m',
+    'success': '\x1b[32m✅ SUCCESS\x1b[0m',
+    'debug': '\x1b[35m🐛 DEBUG\x1b[0m'
+  }
+  console.log(`[${timestamp}] ${types[type] || types.info}`, ...args)
 }
 
-// AUTO-REGISTER: Registrar comandos automáticamente al iniciar
-async function autoRegisterCommands() {
-  const commands = []
-  const commandsPath = path.join(__dirname, 'commands')
-  
-  if (!fs.existsSync(commandsPath)) {
-    client.log('warn', 'No se encontró carpeta de comandos')
-    return
-  }
-  
-  const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
-  
-  client.log('info', `🔄 Registrando comandos slash...`)
-  
-  for (const file of commandFiles) {
-    try {
-      const filePath = path.join(commandsPath, file)
-      delete require.cache[require.resolve(filePath)]
-      const CommandClass = require(filePath)
-      
-      if (typeof CommandClass === 'function') {
-        const commandInstance = new CommandClass(client)
-        
-        if (typeof commandInstance.getSlashCommandData === 'function') {
-          const slashBuilder = commandInstance.getSlashCommandData()
-          
-          // Verificar que sea un SlashCommandBuilder válido
-          if (slashBuilder && typeof slashBuilder.toJSON === 'function') {
-            const commandData = slashBuilder.toJSON()
-            
-            if (commandData && commandData.name && commandData.description) {
-              commands.push(commandData)
-              client.log('debug', `  ✅ ${file.padEnd(25)} -> /${commandData.name}`)
-            }
-          } else if (slashBuilder && slashBuilder.name && slashBuilder.description) {
-            // Soporte para objetos simples (backward compatibility)
-            commands.push(slashBuilder)
-            client.log('debug', `  ⚠️  ${file.padEnd(25)} -> /${slashBuilder.name} (objeto simple)`)
-          }
-        }
-      }
-    } catch (error) {
-      client.log('warn', `  ❌ ${file}: ${error.message}`)
-    }
-  }
-  
-  if (commands.length === 0) {
-    client.log('warn', 'No se encontraron comandos válidos para registrar')
-    return
-  }
-  
-  try {
-    const token = process.env.TOKEN || process.env.DISCORD_TOKEN
-    const clientId = process.env.CLIENT_ID || client.user?.id
-    
-    if (!token || !clientId) {
-      client.log('error', 'Falta TOKEN o CLIENT_ID para auto-registro')
-      return
-    }
-    
-    const rest = new REST({ version: '10' }).setToken(token)
-    
-    client.log('info', `📤 Subiendo ${commands.length} comandos a Discord...`)
-    
-    const data = await rest.put(
-      Routes.applicationCommands(clientId),
-      { body: commands }
-    )
-    
-    client.log('info', `✅ ${data.length} comandos registrados en Discord!`)
-  } catch (error) {
-    client.log('error', 'Error en auto-registro:', error.message)
-    if (error.rawError?.errors) {
-      console.error('Detalles:', JSON.stringify(error.rawError.errors, null, 2))
-    }
-  }
-}
-
-// Cargar comandos slash
+// Cargar comandos
 const commandsPath = path.join(__dirname, 'commands')
-if (fs.existsSync(commandsPath)) {
-  const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
-  
-  for (const file of commandFiles) {
-    try {
-      const filePath = path.join(commandsPath, file)
-      const CommandClass = require(filePath)
-      
-      if (typeof CommandClass === 'function') {
-        const command = new CommandClass(client)
-        
-        if (command.name && typeof command.runSlash === 'function') {
-          client.slashCommands.set(command.name, command)
-          
-          if (command.aliases && Array.isArray(command.aliases)) {
-            command.aliases.forEach(alias => {
-              client.commands.set(alias, command)
-            })
-          }
-        }
-      }
-    } catch (error) {
-      // Ignorar errores silenciosamente
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
+
+for (const file of commandFiles) {
+  try {
+    const Command = require(path.join(commandsPath, file))
+    const command = new Command(client)
+    client.slashCommands.set(command.name, command)
+    
+    if (command.aliases && command.aliases.length > 0) {
+      command.aliases.forEach(alias => {
+        client.aliases.set(alias, command.name)
+      })
     }
+  } catch (error) {
+    client.log('error', `Error cargando comando ${file}:`, error)
   }
-  
-  client.log('info', `🎮 Cargados ${client.slashCommands.size} comandos slash`)
 }
+
+client.log('success', `📦 ${client.slashCommands.size} comandos cargados`)
 
 // Cargar eventos
 const eventsPath = path.join(__dirname, 'events')
-if (fs.existsSync(eventsPath)) {
-  const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'))
-  
-  for (const file of eventFiles) {
-    try {
-      const filePath = path.join(eventsPath, file)
-      const event = require(filePath)
-      
-      if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args, client))
-      } else {
-        client.on(event.name, (...args) => event.execute(...args, client))
-      }
-      
-      client.log('info', `🔊 Evento cargado: ${event.name}`)
-    } catch (error) {
-      // Ignorar
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'))
+
+for (const file of eventFiles) {
+  try {
+    const event = require(path.join(eventsPath, file))
+    if (event.once) {
+      client.once(event.name, (...args) => event.execute(...args, client))
+    } else {
+      client.on(event.name, (...args) => event.execute(...args, client))
     }
+  } catch (error) {
+    client.log('error', `Error cargando evento ${file}:`, error)
   }
 }
 
-// Evento: Bot listo
-client.once('ready', async () => {
-  client.log('info', `🚀 Bot conectado como ${client.user.tag}`)
-  client.log('info', `🏠 En ${client.guilds.cache.size} servidores`)
-  client.log('info', `👥 Viendo ${client.users.cache.size} usuarios`)
+client.log('success', `🎭 ${eventFiles.length} eventos cargados`)
+
+// Inicializar Lavalink cuando el bot esté listo
+client.once('ready', () => {
+  client.log('success', `🤖 Bot conectado como ${client.user.tag}`)
+  client.log('info', `📊 Servidores: ${client.guilds.cache.size}`)
+  client.log('info', `👥 Usuarios: ${client.guilds.cache.reduce((a, g) => a + g.memberCount, 0)}`)
   
-  // AUTO-REGISTER AUTOMÁTICO
-  await autoRegisterCommands()
-  
-  // INICIAR DASHBOARD WEB
-  try {
-    const dashboardPath = path.join(__dirname, '../dashboard/server.js')
-    if (fs.existsSync(dashboardPath)) {
-      const { startDashboard } = require(dashboardPath)
-      startDashboard(client)
-    }
-  } catch (error) {
-    client.log('warn', 'No se pudo iniciar dashboard:', error.message)
-  }
-  
-  // Establecer estado
+  // Actualizar presencia
   client.user.setPresence({
-    activities: [{ name: '/help | EstacionKusTV', type: 2 }],
+    activities: [{ name: '/help | BabaRadio & EstacionKusTV', type: 2 }],
     status: 'online'
   })
+  
+  // Inicializar Music Manager con Lavalink
+  if (process.env.LAVALINK_HOST && process.env.LAVALINK_PORT) {
+    try {
+      const musicManager = new MusicManager(client)
+      
+      const nodes = [
+        {
+          identifier: 'Main',
+          host: process.env.LAVALINK_HOST || 'localhost',
+          port: parseInt(process.env.LAVALINK_PORT) || 2333,
+          password: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
+          secure: false,
+          retryAmount: 5,
+          retryDelay: 3000
+        }
+      ]
+      
+      client.manager = musicManager.init(nodes)
+      client.manager.init(client.user.id)
+      
+      client.log('success', '🎵 Music Manager inicializado')
+    } catch (error) {
+      client.log('error', 'Error inicializando Music Manager:', error)
+      client.log('warn', '⚠️  Los comandos de música no estarán disponibles')
+    }
+  } else {
+    client.log('warn', '⚠️  Lavalink no configurado en .env - comandos de música deshabilitados')
+  }
+  
+  // Registrar comandos slash globalmente
+  registerSlashCommands()
 })
 
-// Evento: Interacciones
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return
+// Registrar comandos slash
+async function registerSlashCommands() {
+  const commands = []
   
-  const command = client.slashCommands.get(interaction.commandName)
-  
-  if (!command) {
-    try {
-      const { handle404Error } = require('./handlers/errorHandler.js')
-      if (handle404Error) {
-        await handle404Error(client, interaction, interaction.commandName)
-      }
-    } catch (e) {
-      await interaction.reply({ 
-        content: `❌ Comando /${interaction.commandName} no encontrado.`, 
-        ephemeral: true 
-      })
+  client.slashCommands.forEach(command => {
+    if (command.getSlashCommandData) {
+      commands.push(command.getSlashCommandData())
     }
-    return
-  }
+  })
   
   try {
-    await command.runSlash(interaction)
+    await client.application.commands.set(commands)
+    client.log('success', `✅ ${commands.length} comandos slash registrados globalmente`)
   } catch (error) {
-    client.log('error', `Error ejecutando /${interaction.commandName}:`, error)
-    
-    const errorMessage = {
-      content: '❌ Ocurrió un error al ejecutar el comando.',
-      ephemeral: true
-    }
-    
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(errorMessage)
-    } else {
-      await interaction.reply(errorMessage)
-    }
+    client.log('error', 'Error registrando comandos slash:', error)
+  }
+}
+
+// Manejar raw events para Lavalink
+client.on('raw', d => {
+  if (client.manager) {
+    client.manager.updateVoiceState(d)
   }
 })
 
-client.on('error', error => {
-  client.log('error', 'Error del cliente:', error)
-})
-
+// Manejo de errores
 process.on('unhandledRejection', error => {
-  client.log('error', 'Promesa rechazada:', error)
+  client.log('error', 'Unhandled promise rejection:', error)
 })
 
 process.on('uncaughtException', error => {
-  client.log('error', 'Excepción no capturada:', error)
+  client.log('error', 'Uncaught exception:', error)
+})
+
+// Login
+client.login(process.env.DISCORD_TOKEN).catch(error => {
+  client.log('error', 'Error al iniciar sesión:', error)
   process.exit(1)
 })
-
-const token = process.env.TOKEN || process.env.DISCORD_TOKEN
-
-if (!token) {
-  console.error('❌ No se encontró TOKEN en .env')
-  process.exit(1)
-}
-
-client.login(token).catch(error => {
-  console.error('❌ Error al conectar:', error.message)
-  process.exit(1)
-})
-
-process.on('SIGINT', () => {
-  client.log('info', '🛑 Apagando bot...')
-  client.destroy()
-  process.exit(0)
-})
-
-process.on('SIGTERM', () => {
-  client.log('info', '🛑 Apagando bot...')
-  client.destroy()
-  process.exit(0)
-})
-
-// Exportar cliente para el dashboard
-module.exports = client
