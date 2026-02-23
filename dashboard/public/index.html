@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLOME Bot - Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🤖</span>
+                <h1>SOLOME Bot</h1>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <span class="status-dot"></span>
+                <span>Cargando...</span>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon">🏠</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="servers">-</div>
+                    <div class="stat-label">Servidores</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="users">-</div>
+                    <div class="stat-label">Usuarios</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="commands">-</div>
+                    <div class="stat-label">Comandos</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="ping">-</div>
+                    <div class="stat-label">Ping</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-grid">
+            <!-- Bot Info -->
+            <div class="card">
+                <h2>📊 Información del Bot</h2>
+                <div class="bot-info" id="botInfo">
+                    <div class="info-item">
+                        <span class="info-label">Nombre:</span>
+                        <span class="info-value" id="botName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tiempo activo:</span>
+                        <span class="info-value" id="uptime">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Memoria:</span>
+                        <span class="info-value" id="memory">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Versión:</span>
+                        <span class="info-value" id="version">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commands List -->
+            <div class="card">
+                <h2>⚡ Comandos Disponibles</h2>
+                <div class="commands-list" id="commandsList">
+                    <div class="loading">Cargando comandos...</div>
+                </div>
+            </div>
+
+            <!-- Servers List -->
+            <div class="card full-width">
+                <h2>🏠 Servidores</h2>
+                <div class="servers-list" id="serversList">
+                    <div class="loading">Cargando servidores...</div>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div class="card full-width">
+                <h2>📝 Logs Recientes</h2>
+                <div class="logs-container" id="logsContainer">
+                    <div class="loading">Cargando logs...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🎵 SOLOME Bot v4.0 - EstacionKusTV | BabaRadio</p>
+            <p>Hecho con ❤️ para la comunidad</p>
+        </footer>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
