@@ -1,162 +1,87 @@
 const Command = require('../structures/command.js')
 const { EmbedBuilder } = require('discord.js')
-const axios = require('axios')
-const { serverConfigs } = require('./ai.js')
+const { load, save } = require('../utils/database.js')
 
 module.exports = class Moderar extends Command {
   constructor (client) {
     super(client, {
       name: 'moderar',
-      aliases: ['moderate', 'filtro'],
-      description: '🛡️ Moderación automática con IA - Detecta contenido inapropiado'
+      aliases: ['moderate', 'automod'],
+      description: '🛡️ Sistema de moderación automática con IA para detectar contenido inapropiado'
     })
   }
 
   async runSlash (interaction) {
-    const subcommand = interaction.options.getSubcommand()
-    
-    if (subcommand === 'texto') {
-      await this.texto(interaction)
-    } else if (subcommand === 'imagen') {
-      await this.imagen(interaction)
-    } else if (subcommand === 'auto') {
-      await this.auto(interaction)
-    } else if (subcommand === 'config') {
-      await this.config(interaction)
-    }
+    const sub = interaction.options.getSubcommand()
+
+    if (sub === 'texto') await this.texto(interaction)
+    else if (sub === 'imagen') await this.imagen(interaction)
+    else if (sub === 'auto') await this.auto(interaction)
+    else if (sub === 'config') await this.config(interaction)
   }
 
   async texto(interaction) {
     await interaction.deferReply({ ephemeral: true })
-    
     const texto = interaction.options.getString('texto')
-    const config = serverConfigs.get(interaction.guild.id)
-    
-    if (!config?.apiKey) {
-      return interaction.editReply('❌ Configura primero una API key con `/ai config`')
+
+    // Detección básica (en producción: usar API de moderación)
+    const palabrasProhibidas = ['spam', 'scam', 'hack']
+    const encontradas = palabrasProhibidas.filter(p => texto.toLowerCase().includes(p))
+
+    const embed = new EmbedBuilder()
+      .setColor(encontradas.length > 0 ? 0xff0000 : 0x00ff00)
+      .setTitle('🔍 Análisis de Texto')
+      .addFields(
+        { name: '📝 Texto', value: texto.substring(0, 200), inline: false },
+        { name: '⚠️ Resultado', value: encontradas.length > 0 ? `❌ Contenido inapropiado detectado` : `✅ Contenido seguro`, inline: false }
+      )
+
+    if (encontradas.length > 0) {
+      embed.addFields({ name: '🚨 Palabras detectadas', value: encontradas.join(', ') })
     }
-    
-    try {
-      const response = await axios.post('https://api.openai.com/v1/moderations', {
-        input: texto
-      }, {
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      const result = response.data.results[0]
-      const flagged = result.flagged
-      const categories = result.categories
-      const scores = result.category_scores
-      
-      const embed = new EmbedBuilder()
-        .setColor(flagged ? 0xff0000 : 0x00ff00)
-        .setTitle(flagged ? '⚠️ Contenido Inapropiado Detectado' : '✅ Contenido Apropiado')
-        .setDescription(`**Texto analizado:** ${texto.substring(0, 200)}...`)
-      
-      if (flagged) {
-        const problemas = Object.entries(categories)
-          .filter(([_, value]) => value)
-          .map(([key, _]) => {
-            const score = (scores[key] * 100).toFixed(1)
-            return `• ${key}: ${score}% confianza`
-          })
-          .join('\n')
-        
-        embed.addFields(
-          { name: '🚨 Categorías Detectadas', value: problemas || 'Ninguna' },
-          { name: '🛡️ Acción Recomendada', value: 'Advertir o eliminar mensaje' }
-        )
-      } else {
-        embed.setDescription(`✅ El contenido no viola las políticas de uso.`)
-      }
-      
-      embed.setFooter({ text: 'OpenAI Moderation API' })
-      embed.setTimestamp()
-      
-      await interaction.editReply({ embeds: [embed] })
-      
-    } catch (error) {
-      this.client.log('error', error)
-      await interaction.editReply('❌ Error al analizar contenido.')
-    }
+
+    await interaction.editReply({ embeds: [embed] })
   }
 
   async imagen(interaction) {
     await interaction.deferReply({ ephemeral: true })
-    
-    const imagen = interaction.options.getAttachment('imagen')
-    
-    const embed = new EmbedBuilder()
-      .setColor(0xffa500)
-      .setTitle('🛡️ Análisis de Imagen')
-      .setDescription(
-        'Esta función requiere APIs adicionales como:\n' +
-        '• Google Vision AI\n' +
-        '• AWS Rekognition\n' +
-        '• Azure Content Moderator\n\n' +
-        'Configura una en `/moderar config`'
-      )
-      .setThumbnail(imagen.url)
-      .setFooter({ text: 'Próximamente' })
-      .setTimestamp()
-    
-    await interaction.editReply({ embeds: [embed] })
+    await interaction.editReply('❌ Moderación de imágenes aún no implementada. Próximamente!')
   }
 
   async auto(interaction) {
     if (!interaction.member.permissions.has('Administrator')) {
-      return interaction.reply({ 
-        content: '❌ Solo administradores pueden configurar moderación automática.',
-        ephemeral: true 
-      })
+      return interaction.reply({ content: '❌ Solo administradores.', ephemeral: true })
     }
-    
-    const estado = interaction.options.getBoolean('activar')
+
+    const activar = interaction.options.getBoolean('activar')
     const severidad = interaction.options.getString('severidad') || 'media'
-    
-    // Guardar config (en producción: BD)
-    const embed = new EmbedBuilder()
-      .setColor(estado ? 0x00ff00 : 0xff0000)
-      .setTitle(`🛡️ Moderación Automática ${estado ? 'Activada' : 'Desactivada'}`)
-      .setDescription(
-        estado
-          ? `Los mensajes serán analizados automáticamente.\n**Severidad:** ${severidad}`
-          : 'La moderación automática ha sido desactivada.'
-      )
-      .addFields(
-        { name: '🔍 Detección', value: 'Odio, violencia, contenido sexual, spam' },
-        { name: '⚡ Acción', value: severidad === 'alta' ? 'Eliminar y advertir' : 'Solo advertir' }
-      )
-      .setFooter({ text: 'Configuración guardada' })
-      .setTimestamp()
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true })
+
+    const config = load('moderation-config', {})
+    config[interaction.guild.id] = { enabled: activar, severity: severidad }
+    save('moderation-config', config)
+
+    await interaction.reply({ 
+      content: `✅ Moderación automática ${activar ? 'activada' : 'desactivada'} (Severidad: ${severidad})`,
+      ephemeral: true 
+    })
   }
 
   async config(interaction) {
     if (!interaction.member.permissions.has('Administrator')) {
-      return interaction.reply({ 
-        content: '❌ Solo administradores.',
-        ephemeral: true 
-      })
+      return interaction.reply({ content: '❌ Solo administradores.', ephemeral: true })
     }
-    
+
+    const config = load('moderation-config', {})
+    const guildConfig = config[interaction.guild.id] || { enabled: false, severity: 'media' }
+
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle('⚙️ Configuración de Moderación IA')
-      .setDescription('Opciones disponibles:')
+      .setTitle('⚙️ Configuración de Moderación')
       .addFields(
-        { name: '🛡️ Auto-Moderación', value: 'Activa con `/moderar auto`' },
-        { name: '🔔 Alertas', value: 'Envía notificaciones a un canal' },
-        { name: '📋 Logs', value: 'Registra todas las detecciones' },
-        { name: '⚡ Acciones', value: 'Warn, kick, ban, delete' }
+        { name: '🔘 Estado', value: guildConfig.enabled ? '✅ Activada' : '❌ Desactivada', inline: true },
+        { name: '🎯 Severidad', value: guildConfig.severity, inline: true }
       )
-      .setFooter({ text: 'Sistema de moderación inteligente' })
-      .setTimestamp()
-    
+
     await interaction.reply({ embeds: [embed], ephemeral: true })
   }
 

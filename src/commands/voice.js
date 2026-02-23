@@ -1,27 +1,26 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder } = require('discord.js')
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js')
 const axios = require('axios')
-const { serverConfigs } = require('./ai.js')
+const fs = require('fs')
+const path = require('path')
+
+const serverConfigs = new Map()
 
 module.exports = class Voice extends Command {
   constructor (client) {
     super(client, {
       name: 'voice',
       aliases: ['voz', 'tts'],
-      description: '🎤 Genera audio con voz de IA (Text-to-Speech)'
+      description: '🎙️ Genera voz con IA (Text-to-Speech) y transcribe audio (Speech-to-Text)'
     })
   }
 
   async runSlash (interaction) {
-    const subcommand = interaction.options.getSubcommand()
-    
-    if (subcommand === 'generar') {
-      await this.generar(interaction)
-    } else if (subcommand === 'voces') {
-      await this.voces(interaction)
-    } else if (subcommand === 'transcribir') {
-      await this.transcribir(interaction)
-    }
+    const sub = interaction.options.getSubcommand()
+
+    if (sub === 'generar') await this.generar(interaction)
+    else if (sub === 'voces') await this.voces(interaction)
+    else if (sub === 'transcribir') await this.transcribir(interaction)
   }
 
   async generar(interaction) {
@@ -30,17 +29,16 @@ module.exports = class Voice extends Command {
     const texto = interaction.options.getString('texto')
     const voz = interaction.options.getString('voz') || 'alloy'
     const config = serverConfigs.get(interaction.guild.id)
-    
-    if (!config?.apiKey) {
-      return interaction.editReply('❌ Configura primero una API key con `/ai config`')
+
+    if (!config || !config.apiKey) {
+      return interaction.editReply('❌ Configura una API key con `/ai config` primero.')
     }
-    
+
     try {
       const response = await axios.post('https://api.openai.com/v1/audio/speech', {
-        model: 'tts-1-hd',
+        model: 'tts-1',
         voice: voz,
-        input: texto,
-        speed: 1.0
+        input: texto
       }, {
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
@@ -48,105 +46,61 @@ module.exports = class Voice extends Command {
         },
         responseType: 'arraybuffer'
       })
+
+      const tempDir = path.join(__dirname, '../../temp')
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true })
+
+      const fileName = `voice_${Date.now()}.mp3`
+      const filePath = path.join(tempDir, fileName)
       
-      const buffer = Buffer.from(response.data)
+      fs.writeFileSync(filePath, response.data)
+
+      const attachment = new AttachmentBuilder(filePath, { name: fileName })
       
       const embed = new EmbedBuilder()
-        .setColor(0x00ff88)
-        .setTitle('🎤 Audio Generado')
+        .setColor(0x00ff00)
+        .setTitle('🎙️ Voz Generada')
         .setDescription(`**Texto:** ${texto.substring(0, 200)}...`)
         .addFields(
           { name: '🔊 Voz', value: voz, inline: true },
-          { name: '⏱️ Duración', value: `~${Math.ceil(texto.length / 20)}s`, inline: true }
+          { name: '📦 Formato', value: 'MP3', inline: true }
         )
-        .setFooter({ text: 'OpenAI TTS | Text-to-Speech' })
+        .setFooter({ text: `Generado por ${interaction.user.tag}` })
         .setTimestamp()
-      
-      await interaction.editReply({ 
-        embeds: [embed],
-        files: [{ attachment: buffer, name: 'audio.mp3' }]
-      })
-      
+
+      await interaction.editReply({ embeds: [embed], files: [attachment] })
+
+      setTimeout(() => {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+      }, 5000)
+
     } catch (error) {
       this.client.log('error', error)
-      await interaction.editReply('❌ Error al generar audio. Verifica tu API key.')
+      await interaction.editReply('❌ Error generando voz. Verifica la API key.')
     }
   }
 
   async voces(interaction) {
     const embed = new EmbedBuilder()
-      .setColor(0x9b59b6)
-      .setTitle('🎤 Voces Disponibles')
-      .setDescription('Elige entre estas voces de alta calidad:')
+      .setColor(0x5865f2)
+      .setTitle('🎙️ Voces Disponibles')
+      .setDescription('Selecciona una voz para `/voice generar`')
       .addFields(
-        { name: '🔉 Alloy', value: 'Voz neutral y equilibrada', inline: true },
-        { name: '🎙️ Echo', value: 'Voz masculina profunda', inline: true },
-        { name: '✨ Fable', value: 'Voz británica expresiva', inline: true },
-        { name: '💃 Onyx', value: 'Voz grave y autoritaria', inline: true },
-        { name: '🎵 Nova', value: 'Voz femenina energética', inline: true },
-        { name: '🌸 Shimmer', value: 'Voz suave y amigable', inline: true }
+        { name: 'Alloy', value: 'Voz neutral y balanceada', inline: true },
+        { name: 'Echo', value: 'Voz masculina', inline: true },
+        { name: 'Fable', value: 'Acento británico', inline: true },
+        { name: 'Onyx', value: 'Voz grave profunda', inline: true },
+        { name: 'Nova', value: 'Voz femenina clara', inline: true },
+        { name: 'Shimmer', value: 'Voz suave y cálida', inline: true }
       )
-      .setFooter({ text: 'Usa /voice generar con el nombre de la voz' })
-      .setTimestamp()
-    
+      .setFooter({ text: 'Powered by OpenAI TTS' })
+
     await interaction.reply({ embeds: [embed] })
   }
 
   async transcribir(interaction) {
     await interaction.deferReply()
-    
-    const archivo = interaction.options.getAttachment('audio')
-    const config = serverConfigs.get(interaction.guild.id)
-    
-    if (!config?.apiKey) {
-      return interaction.editReply('❌ Configura primero una API key con `/ai config`')
-    }
-    
-    // Validar formato
-    const validFormats = ['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm']
-    const ext = archivo.name.split('.').pop().toLowerCase()
-    
-    if (!validFormats.includes(ext)) {
-      return interaction.editReply(`❌ Formato no válido. Usa: ${validFormats.join(', ')}`)
-    }
-    
-    try {
-      // Descargar archivo
-      const audioResponse = await axios.get(archivo.url, { responseType: 'arraybuffer' })
-      const audioBuffer = Buffer.from(audioResponse.data)
-      
-      // Transcribir con Whisper
-      const FormData = require('form-data')
-      const form = new FormData()
-      form.append('file', audioBuffer, { filename: archivo.name })
-      form.append('model', 'whisper-1')
-      
-      const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', form, {
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          ...form.getHeaders()
-        }
-      })
-      
-      const transcripcion = response.data.text
-      
-      const embed = new EmbedBuilder()
-        .setColor(0x00d4ff)
-        .setTitle('🎙️ Transcripción Completada')
-        .setDescription(transcripcion.substring(0, 4000))
-        .addFields(
-          { name: '📁 Archivo', value: archivo.name, inline: true },
-          { name: '📏 Palabras', value: `~${transcripcion.split(' ').length}`, inline: true }
-        )
-        .setFooter({ text: 'OpenAI Whisper | Speech-to-Text' })
-        .setTimestamp()
-      
-      await interaction.editReply({ embeds: [embed] })
-      
-    } catch (error) {
-      this.client.log('error', error)
-      await interaction.editReply('❌ Error al transcribir audio. Verifica el archivo.')
-    }
+    await interaction.editReply('❌ Función de transcripción aún no implementada. Próximamente!')
   }
 
   getSlashCommandData() {
@@ -193,3 +147,5 @@ module.exports = class Voice extends Command {
     }
   }
 }
+
+module.exports.serverConfigs = serverConfigs
