@@ -1,67 +1,54 @@
 const Command = require('../structures/command.js')
 const { EmbedBuilder } = require('discord.js')
-
-const SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '⭐', '💰', '7️⃣']
-const MULTIPLIERS = {
-  '🍒': 2,
-  '🍋': 3,
-  '🍊': 4,
-  '🍇': 5,
-  '⭐': 10,
-  '💰': 20,
-  '7️⃣': 77
-}
+const { load, save } = require('../utils/database.js')
 
 module.exports = class Slots extends Command {
   constructor (client) {
     super(client, {
       name: 'slots',
-      aliases: ['slot', 'tragamonedas'],
-      description: '🎰 Juega a las tragamonedas'
+      aliases: ['slot'],
+      description: '🎰 Máquina tragamonedas - Apuesta y gana premios'
     })
   }
 
   async runSlash (interaction) {
     const apuesta = interaction.options.getInteger('apuesta')
-    
-    // Generar 3 símbolos aleatorios
-    const results = [
-      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]
-    ]
-    
-    // Verificar si ganó
-    const todosIguales = results[0] === results[1] && results[1] === results[2]
-    const dosIguales = results[0] === results[1] || results[1] === results[2] || results[0] === results[2]
-    
-    let ganancia = 0
-    let mensaje = ''
-    
-    if (todosIguales) {
-      const multiplicador = MULTIPLIERS[results[0]]
-      ganancia = apuesta * multiplicador
-      mensaje = `🎉 ¡JACKPOT! x${multiplicador}`
-    } else if (dosIguales) {
-      ganancia = Math.floor(apuesta * 0.5)
-      mensaje = '😊 ¡Par! Recuperaste algo'
-    } else {
-      ganancia = -apuesta
-      mensaje = '😢 Sin suerte esta vez'
+
+    const economy = load('economy', {})
+    const userData = economy[interaction.user.id] || { balance: 0 }
+
+    if (userData.balance < apuesta) {
+      return interaction.reply({ content: '❌ No tienes suficiente dinero!', ephemeral: true })
     }
+
+    const simbolos = ['🍒', '🍋', '🍊', '💎', '👑', '⭐']
+    const resultado = [
+      simbolos[Math.floor(Math.random() * simbolos.length)],
+      simbolos[Math.floor(Math.random() * simbolos.length)],
+      simbolos[Math.floor(Math.random() * simbolos.length)]
+    ]
+
+    let ganancia = -apuesta
     
+    if (resultado[0] === resultado[1] && resultado[1] === resultado[2]) {
+      ganancia = apuesta * 10
+    } else if (resultado[0] === resultado[1] || resultado[1] === resultado[2]) {
+      ganancia = apuesta * 2
+    }
+
+    userData.balance += ganancia
+    economy[interaction.user.id] = userData
+    save('economy', economy)
+
     const embed = new EmbedBuilder()
-      .setColor(todosIguales ? 0xffd700 : dosIguales ? 0x00ff00 : 0xff0000)
-      .setTitle('🎰 Tragamonedas')
-      .setDescription(`\n\n🟦🟦🟦🟦🟦\n🟦 ${results[0]} ${results[1]} ${results[2]} 🟦\n🟦🟦🟦🟦🟦\n\n${mensaje}`)
+      .setColor(ganancia > 0 ? 0x00ff00 : 0xff0000)
+      .setTitle('🎰 Slots')
+      .setDescription(`${resultado.join(' | ')}`)
       .addFields(
-        { name: '💵 Apuesta', value: `$${apuesta}`, inline: true },
-        { name: ganancia > 0 ? '🎉 Ganancia' : '😢 Pérdida', value: ganancia > 0 ? `+$${ganancia}` : `$${ganancia}`, inline: true },
-        { name: '📊 Balance', value: ganancia > 0 ? `+$${ganancia - apuesta}` : `-$${Math.abs(ganancia)}`, inline: true }
+        { name: 'Resultado', value: ganancia > 0 ? `✅ +$${ganancia}` : `❌ -$${Math.abs(ganancia)}`, inline: true },
+        { name: 'Balance', value: `$${userData.balance}`, inline: true }
       )
-      .setFooter({ text: '🍊=x4 | ⭐=x10 | 💰=x20 | 7️⃣=x77' })
-      .setTimestamp()
-    
+
     await interaction.reply({ embeds: [embed] })
   }
 

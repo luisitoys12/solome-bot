@@ -6,8 +6,8 @@ module.exports = class Traducir extends Command {
   constructor (client) {
     super(client, {
       name: 'traducir',
-      aliases: ['translate', 'tr'],
-      description: 'Traduce texto entre diferentes idiomas'
+      aliases: ['translate'],
+      description: '🌍 Traduce texto a múltiples idiomas usando Google Translate'
     })
   }
 
@@ -16,38 +16,27 @@ module.exports = class Traducir extends Command {
     
     const texto = interaction.options.getString('texto')
     const idioma = interaction.options.getString('idioma') || 'es'
-    
+
     try {
-      // Usar API de traducción gratuita
-      const response = await axios.get('https://translate.googleapis.com/translate_a/single', {
-        params: {
-          client: 'gtx',
-          sl: 'auto',
-          tl: idioma,
-          dt: 't',
-          q: texto
-        }
-      })
+      // API de traducción libre (alternativa a Google)
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${idioma}&dt=t&q=${encodeURIComponent(texto)}`
       
-      const traduccion = response.data[0].map(item => item[0]).join('')
-      const idiomaDetectado = response.data[2] || 'desconocido'
-      
+      const response = await axios.get(url)
+      const traduccion = response.data[0][0][0]
+
       const embed = new EmbedBuilder()
         .setColor(0x4285f4)
         .setTitle('🌍 Traducción')
         .addFields(
-          { name: '📝 Original', value: texto.substring(0, 1024) },
-          { name: '✅ Traducción', value: traduccion.substring(0, 1024) },
-          { name: '🇲🇽 Idioma detectado', value: idiomaDetectado, inline: true },
-          { name: '🎯 Idioma destino', value: idioma, inline: true }
+          { name: '📝 Original', value: texto.substring(0, 1024), inline: false },
+          { name: '✅ Traducción', value: traduccion.substring(0, 1024), inline: false },
+          { name: '🌐 Idioma', value: idioma.toUpperCase(), inline: true }
         )
-        .setFooter({ text: 'Powered by Google Translate' })
-        .setTimestamp()
-      
+
       await interaction.editReply({ embeds: [embed] })
     } catch (error) {
       this.client.log('error', error)
-      await interaction.editReply('❌ Error al traducir el texto.')
+      await interaction.editReply('❌ Error al traducir. Intenta nuevamente.')
     }
   }
 

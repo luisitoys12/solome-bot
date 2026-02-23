@@ -5,54 +5,24 @@ module.exports = class Sorteo extends Command {
   constructor (client) {
     super(client, {
       name: 'sorteo',
-      aliases: ['raffle'],
-      description: 'Realiza un sorteo instantáneo entre miembros activos'
+      aliases: ['giveaway'],
+      description: '🎁 Crea sorteos instantáneos con reacciones'
     })
   }
 
   async runSlash (interaction) {
-    await interaction.deferReply()
-    
     const premio = interaction.options.getString('premio')
     const ganadores = interaction.options.getInteger('ganadores') || 1
-    
-    // Obtener miembros del servidor
-    const members = await interaction.guild.members.fetch()
-    const eligibleMembers = members.filter(m => !m.user.bot && m.presence?.status !== 'offline')
-    
-    if (eligibleMembers.size < ganadores) {
-      return interaction.editReply('❌ No hay suficientes miembros elegibles para este sorteo.')
-    }
-    
-    // Seleccionar ganadores aleatorios
-    const winnersArray = []
-    const membersArray = Array.from(eligibleMembers.values())
-    
-    for (let i = 0; i < ganadores; i++) {
-      const randomIndex = Math.floor(Math.random() * membersArray.length)
-      winnersArray.push(membersArray[randomIndex])
-      membersArray.splice(randomIndex, 1)
-    }
-    
+
     const embed = new EmbedBuilder()
       .setColor(0xff69b4)
-      .setTitle('🎉 ¡Resultados del Sorteo!')
-      .setDescription(`**Premio:** ${premio}`)
-      .addFields(
-        { 
-          name: ganadores === 1 ? '🏆 Ganador' : '🏆 Ganadores', 
-          value: winnersArray.map(w => `<@${w.user.id}>`).join('\n') 
-        },
-        { name: '👥 Participantes elegibles', value: `${eligibleMembers.size}`, inline: true },
-        { name: '🎯 Total ganadores', value: `${ganadores}`, inline: true }
-      )
-      .setFooter({ text: `Sorteo realizado por ${interaction.user.tag}` })
+      .setTitle('🎉 ¡SORTEO!')
+      .setDescription(`**Premio:** ${premio}\n**Ganadores:** ${ganadores}\n\nReacciona con 🎉 para participar!`)
+      .setFooter({ text: `Organizado por ${interaction.user.tag}` })
       .setTimestamp()
-    
-    await interaction.editReply({ 
-      content: winnersArray.map(w => `<@${w.user.id}>`).join(' '),
-      embeds: [embed] 
-    })
+
+    const msg = await interaction.reply({ embeds: [embed], fetchReply: true })
+    await msg.react('🎉')
   }
 
   getSlashCommandData() {

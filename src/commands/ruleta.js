@@ -1,48 +1,65 @@
 const Command = require('../structures/command.js')
 const { EmbedBuilder } = require('discord.js')
+const { load, save } = require('../utils/database.js')
 
 module.exports = class Ruleta extends Command {
   constructor (client) {
     super(client, {
       name: 'ruleta',
       aliases: ['roulette'],
-      description: '🎰 Juega a la ruleta y apuesta tus monedas'
+      description: '🎰 Juega a la ruleta y apuesta por rojo, negro o verde'
     })
   }
 
   async runSlash (interaction) {
     const apuesta = interaction.options.getInteger('apuesta')
     const color = interaction.options.getString('color')
-    
-    // Simular ruleta
-    const numeros = Array.from({ length: 37 }, (_, i) => i)
-    const resultado = numeros[Math.floor(Math.random() * numeros.length)]
-    
-    let colorResultado = 'verde'
-    if (resultado !== 0) {
-      const rojos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-      colorResultado = rojos.includes(resultado) ? 'rojo' : 'negro'
+
+    const economy = load('economy', {})
+    const userData = economy[interaction.user.id] || { balance: 0 }
+
+    if (userData.balance < apuesta) {
+      return interaction.reply({ content: '❌ No tienes suficiente dinero!', ephemeral: true })
     }
+
+    const numero = Math.floor(Math.random() * 37)
+    let resultado
     
-    const gano = (color === 'verde' && resultado === 0) ||
-                 (color === 'rojo' && colorResultado === 'rojo') ||
-                 (color === 'negro' && colorResultado === 'negro')
+    if (numero === 0) {
+      resultado = 'verde'
+    } else if (numero % 2 === 0) {
+      resultado = 'rojo'
+    } else {
+      resultado = 'negro'
+    }
+
+    let ganancia = 0
     
-    const multiplicador = color === 'verde' ? 35 : 2
-    const ganancia = gano ? apuesta * multiplicador : -apuesta
-    
+    if (color === resultado) {
+      if (color === 'verde') {
+        ganancia = apuesta * 35
+      } else {
+        ganancia = apuesta * 2
+      }
+    } else {
+      ganancia = -apuesta
+    }
+
+    userData.balance += ganancia
+    economy[interaction.user.id] = userData
+    save('economy', economy)
+
+    const colorEmoji = { rojo: '🔴', negro: '⚫', verde: '🟢' }
+
     const embed = new EmbedBuilder()
-      .setColor(gano ? 0x00ff00 : 0xff0000)
+      .setColor(ganancia > 0 ? 0x00ff00 : 0xff0000)
       .setTitle('🎰 Ruleta')
-      .setDescription(`La ruleta ha caído en:\n\n**${resultado}** ${colorResultado.toUpperCase()}`)
       .addFields(
-        { name: '🎲 Tu apuesta', value: `${color} - $${apuesta}`, inline: true },
-        { name: gano ? '🎉 Ganaste' : '😢 Perdiste', value: gano ? `$${ganancia}` : `-$${Math.abs(ganancia)}`, inline: true },
-        { name: '📊 Multiplicador', value: `x${multiplicador}`, inline: true }
+        { name: 'Número', value: `${numero} ${colorEmoji[resultado]}`, inline: true },
+        { name: 'Resultado', value: ganancia > 0 ? '✅ ¡Ganaste!' : '❌ Perdiste', inline: true },
+        { name: 'Balance', value: `$${userData.balance}`, inline: false }
       )
-      .setFooter({ text: gano ? '¡Felicidades!' : 'Buena suerte la próxima vez' })
-      .setTimestamp()
-    
+
     await interaction.reply({ embeds: [embed] })
   }
 

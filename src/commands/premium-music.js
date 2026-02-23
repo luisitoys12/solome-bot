@@ -5,33 +5,25 @@ module.exports = class PremiumMusic extends Command {
   constructor (client) {
     super(client, {
       name: 'premium-music',
-      aliases: [],
-      description: '⭐ [PREMIUM] Funciones de música avanzadas - Requiere premium'
+      aliases: ['pmusic'],
+      description: '🌟 Funciones premium de música: ecualizador, filtros, loop infinito y más'
     })
   }
 
   async runSlash (interaction) {
-    // Verificar premium (en producción verificar en BD)
-    const isPremium = false // Cambiar según lógica de premium
+    const funcion = interaction.options.getString('funcion')
     
-    if (!isPremium) {
-      const embed = new EmbedBuilder()
-        .setColor(0xff6b6b)
-        .setTitle('🔒 Función Premium Bloqueada')
-        .setDescription('Este comando requiere **Solome Bot Premium**')
-        .addFields(
-          { name: '✨ Beneficios Premium', value: '• Calidad 320kbps\n• Sin límite de cola\n• Filtros de audio\n• Ecualizador personalizado\n• Música sin interrupciones\n• Prioridad en reproducción' },
-          { name: '💳 Precio', value: '$4.99/mes o $49.99/año', inline: true },
-          { name: '🎁 Prueba', value: '7 días gratis', inline: true }
-        )
-        .setFooter({ text: 'Usa /premium para más información' })
-        .setTimestamp()
-      
-      return interaction.reply({ embeds: [embed], ephemeral: true })
+    // Verificar si el usuario tiene premium
+    const premium = false // Aquí verificarías la DB
+    
+    if (!premium) {
+      return interaction.reply({ 
+        content: '❌ Esta función requiere **Premium**. Usa `/premium` para más info.',
+        ephemeral: true 
+      })
     }
-    
-    // Lógica del comando premium aquí
-    await interaction.reply({ content: '✨ Funciones premium de música activadas!' })
+
+    await interaction.reply({ content: `🌟 Función premium: ${funcion} (En desarrollo)`, ephemeral: true })
   }
 
   getSlashCommandData() {

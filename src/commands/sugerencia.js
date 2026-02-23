@@ -5,36 +5,29 @@ module.exports = class Sugerencia extends Command {
   constructor (client) {
     super(client, {
       name: 'sugerencia',
-      aliases: ['suggest', 'suggestion'],
-      description: 'Envía una sugerencia para el servidor'
+      aliases: ['suggest'],
+      description: '💡 Envía sugerencias para mejorar el servidor'
     })
   }
 
   async runSlash (interaction) {
     const sugerencia = interaction.options.getString('sugerencia')
-    
+
     const embed = new EmbedBuilder()
-      .setColor(0xffd700)
+      .setColor(0x5865f2)
       .setTitle('💡 Nueva Sugerencia')
       .setDescription(sugerencia)
-      .addFields(
-        { name: '👤 Autor', value: `${interaction.user.tag}`, inline: true },
-        { name: '🕑 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true }
-      )
-      .setThumbnail(interaction.user.displayAvatarURL())
-      .setFooter({ text: `ID: ${interaction.user.id}` })
+      .setAuthor({ 
+        name: interaction.user.tag,
+        iconURL: interaction.user.displayAvatarURL()
+      })
       .setTimestamp()
+
+    await interaction.reply({ embeds: [embed] })
     
-    const message = await interaction.reply({ embeds: [embed], fetchReply: true })
-    
-    // Añadir reacciones
-    await message.react('✅') // Check
-    await message.react('❌') // X
-    
-    await interaction.followUp({ 
-      content: '✅ Tu sugerencia ha sido enviada!',
-      ephemeral: true 
-    })
+    const msg = await interaction.fetchReply()
+    await msg.react('✅')
+    await msg.react('❌')
   }
 
   getSlashCommandData() {
