@@ -19,6 +19,7 @@ const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
 console.log(`\n🔧 Verificando ${files.length} comandos...\n`);
 
 let verified = 0;
+let skipped = 0;
 let errors = [];
 let warnings = [];
 
@@ -75,6 +76,13 @@ files.forEach(file => {
             return;
         }
         
+        // Si retorna null, es un comando de utilidad que no se debe registrar
+        if (slashData === null || slashData === undefined) {
+            console.log(`⏭️  ${file.padEnd(25)} -> (skipped - utility file)`);
+            skipped++;
+            return;
+        }
+        
         if (!slashData || typeof slashData !== 'object') {
             errors.push(`${file}: getSlashCommandData() no retorna un objeto`);
             return;
@@ -114,6 +122,7 @@ files.forEach(file => {
 console.log(`\n${'='.repeat(80)}`);
 console.log(`\n📊 RESULTADOS:\n`);
 console.log(`✅ Comandos verificados correctamente: ${verified}`);
+console.log(`⏭️  Archivos de utilidad (skipped): ${skipped}`);
 console.log(`❌ Comandos con errores: ${errors.length}`);
 console.log(`📁 Total de archivos: ${files.length}\n`);
 
@@ -125,5 +134,6 @@ if (errors.length > 0) {
 } else {
     console.log(`🎉 ¡TODOS LOS COMANDOS ESTÁN CORRECTOS!\n`);
     console.log(`🚀 Los ${verified} comandos se registrarán automáticamente al iniciar el bot.\n`);
+    console.log(`📝 Nota: ${skipped} archivo(s) fueron saltados (utilidades, no comandos)\n`);
     process.exit(0);
 }
