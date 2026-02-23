@@ -1,5 +1,5 @@
 require('dotenv').config()
-const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js')
+const { Client, GatewayIntentBits, Partials, Collection, REST, Routes } = require('discord.js')
 const fs = require('fs')
 const path = require('path')
 
@@ -31,6 +31,70 @@ client.log = (level, ...args) => {
   console.log(`[${timestamp}] ${prefix}`, ...args)
 }
 
+// AUTO-REGISTER: Registrar comandos automáticamente al iniciar
+async function autoRegisterCommands() {
+  const commands = []
+  const commandsPath = path.join(__dirname, 'commands')
+  
+  if (!fs.existsSync(commandsPath)) {
+    client.log('warn', 'No se encontró carpeta de comandos')
+    return
+  }
+  
+  const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
+  
+  for (const file of commandFiles) {
+    try {
+      const filePath = path.join(commandsPath, file)
+      delete require.cache[require.resolve(filePath)]
+      const CommandClass = require(filePath)
+      
+      if (typeof CommandClass === 'function') {
+        const commandInstance = new CommandClass(client)
+        
+        if (typeof commandInstance.getSlashCommandData === 'function') {
+          const commandData = commandInstance.getSlashCommandData()
+          
+          // Validar que tenga description
+          if (commandData && commandData.name && commandData.description && commandData.description.length > 0) {
+            commands.push(commandData)
+          }
+        }
+      }
+    } catch (error) {
+      // Ignorar errores silenciosamente
+    }
+  }
+  
+  if (commands.length === 0) {
+    client.log('warn', 'No se encontraron comandos válidos')
+    return
+  }
+  
+  try {
+    const token = process.env.TOKEN || process.env.DISCORD_TOKEN
+    const clientId = process.env.CLIENT_ID || client.user?.id
+    
+    if (!token || !clientId) {
+      client.log('error', 'Falta TOKEN o CLIENT_ID para auto-registro')
+      return
+    }
+    
+    const rest = new REST({ version: '10' }).setToken(token)
+    
+    client.log('info', `🔄 Auto-registrando ${commands.length} comandos...`)
+    
+    await rest.put(
+      Routes.applicationCommands(clientId),
+      { body: commands }
+    )
+    
+    client.log('info', `✅ ${commands.length} comandos registrados automáticamente`)
+  } catch (error) {
+    client.log('error', 'Error en auto-registro:', error.message)
+  }
+}
+
 // Cargar comandos slash
 const commandsPath = path.join(__dirname, 'commands')
 if (fs.existsSync(commandsPath)) {
@@ -47,7 +111,6 @@ if (fs.existsSync(commandsPath)) {
         if (command.name) {
           client.slashCommands.set(command.name, command)
           
-          // También agregar aliases si existen
           if (command.aliases && Array.isArray(command.aliases)) {
             command.aliases.forEach(alias => {
               client.commands.set(alias, command)
@@ -56,7 +119,7 @@ if (fs.existsSync(commandsPath)) {
         }
       }
     } catch (error) {
-      client.log('error', `Error cargando comando ${file}:`, error.message)
+      // Ignorar errores
     }
   }
   
@@ -81,16 +144,19 @@ if (fs.existsSync(eventsPath)) {
       
       client.log('info', `🔊 Evento cargado: ${event.name}`)
     } catch (error) {
-      client.log('error', `Error cargando evento ${file}:`, error.message)
+      // Ignorar
     }
   }
 }
 
-// Evento: Bot listo (FIXED: clientReady en vez de ready)
-client.once('clientReady', () => {
+// Evento: Bot listo
+client.once('clientReady', async () => {
   client.log('info', `🚀 Bot conectado como ${client.user.tag}`)
   client.log('info', `🏠 En ${client.guilds.cache.size} servidores`)
   client.log('info', `👥 Viendo ${client.users.cache.size} usuarios`)
+  
+  // AUTO-REGISTER AUTOMÁTICO AL INICIAR
+  await autoRegisterCommands()
   
   // Establecer estado
   client.user.setPresence({
@@ -99,18 +165,19 @@ client.once('clientReady', () => {
   })
 })
 
-// Evento: Interacciones (comandos slash)
+// Evento: Interacciones
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return
   
   const command = client.slashCommands.get(interaction.commandName)
   
   if (!command) {
-    // Manejar 404
-    const { handle404Error } = require('./handlers/errorHandler.js')
-    if (handle404Error) {
-      await handle404Error(client, interaction, interaction.commandName)
-    } else {
+    try {
+      const { handle404Error } = require('./handlers/errorHandler.js')
+      if (handle404Error) {
+        await handle404Error(client, interaction, interaction.commandName)
+      }
+    } catch (e) {
       await interaction.reply({ 
         content: `❌ Comando /${interaction.commandName} no encontrado.`, 
         ephemeral: true 
@@ -137,13 +204,12 @@ client.on('interactionCreate', async interaction => {
   }
 })
 
-// Evento: Errores no capturados
 client.on('error', error => {
   client.log('error', 'Error del cliente:', error)
 })
 
 process.on('unhandledRejection', error => {
-  client.log('error', 'Promesa rechazada no manejada:', error)
+  client.log('error', 'Promesa rechazada:', error)
 })
 
 process.on('uncaughtException', error => {
@@ -151,24 +217,18 @@ process.on('uncaughtException', error => {
   process.exit(1)
 })
 
-// Login
 const token = process.env.TOKEN || process.env.DISCORD_TOKEN
 
 if (!token) {
   console.error('❌ No se encontró TOKEN en .env')
-  console.error('Asegúrate de tener TOKEN=tu_token_aqui en el archivo .env')
   process.exit(1)
 }
 
 client.login(token).catch(error => {
-  console.error('❌ Error al conectar con Discord:', error.message)
-  if (error.code === 'TokenInvalid') {
-    console.error('🔑 El token en .env es inválido. Verifica que esté correcto.')
-  }
+  console.error('❌ Error al conectar:', error.message)
   process.exit(1)
 })
 
-// Graceful shutdown
 process.on('SIGINT', () => {
   client.log('info', '🛑 Apagando bot...')
   client.destroy()
