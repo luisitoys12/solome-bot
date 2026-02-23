@@ -86,8 +86,8 @@ if (fs.existsSync(eventsPath)) {
   }
 }
 
-// Evento: Bot listo
-client.once('ready', () => {
+// Evento: Bot listo (FIXED: clientReady en vez de ready)
+client.once('clientReady', () => {
   client.log('info', `🚀 Bot conectado como ${client.user.tag}`)
   client.log('info', `🏠 En ${client.guilds.cache.size} servidores`)
   client.log('info', `👥 Viendo ${client.users.cache.size} usuarios`)
