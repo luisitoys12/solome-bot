@@ -1,35 +1,26 @@
 const Command = require('../structures/command.js')
 const { EmbedBuilder } = require('discord.js')
-const { load, save } = require('../utils/database.js')
-
-function getBalance(userId) {
-  const economy = load('economy', {})
-  return economy[userId] || { coins: 0, bank: 0 }
-}
+const { load } = require('../utils/database.js')
 
 module.exports = class Balance extends Command {
   constructor (client) {
     super(client, {
       name: 'balance',
       aliases: ['bal', 'dinero', 'money'],
-      description: '💰 Consulta tu balance de monedas y banco'
+      description: '💰 Consulta tu balance de monedas del servidor'
     })
   }
 
   async runSlash (interaction) {
     const targetUser = interaction.options.getUser('usuario') || interaction.user
-    const data = getBalance(targetUser.id)
+    const economy = load('economy', {})
+    const balance = economy[targetUser.id] || 0
 
     const embed = new EmbedBuilder()
       .setColor(0xffd700)
-      .setTitle(`💰 Balance de ${targetUser.username}`)
+      .setTitle('💰 Balance')
+      .setDescription(`**${targetUser.username}** tiene **${balance}** monedas`)
       .setThumbnail(targetUser.displayAvatarURL())
-      .addFields(
-        { name: '💵 Efectivo', value: `${data.coins.toLocaleString()} monedas`, inline: true },
-        { name: '🏦 Banco', value: `${data.bank.toLocaleString()} monedas`, inline: true },
-        { name: '📊 Total', value: `${(data.coins + data.bank).toLocaleString()} monedas`, inline: true }
-      )
-      .setFooter({ text: 'Usa /work para ganar más monedas' })
       .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
@@ -40,12 +31,7 @@ module.exports = class Balance extends Command {
       name: this.name,
       description: this.description,
       options: [
-        {
-          type: 6,
-          name: 'usuario',
-          description: 'Usuario a consultar (opcional)',
-          required: false
-        }
+        { type: 6, name: 'usuario', description: 'Usuario a consultar (opcional)', required: false }
       ]
     }
   }

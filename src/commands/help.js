@@ -6,83 +6,50 @@ module.exports = class Help extends Command {
     super(client, {
       name: 'help',
       aliases: ['ayuda', 'comandos'],
-      description: '📚 Menú de ayuda con todos los comandos disponibles'
+      description: '📚 Muestra todos los comandos disponibles del bot'
     })
   }
 
   async runSlash (interaction) {
     const categoria = interaction.options.getString('categoria')
 
-    if (categoria) {
-      return this.showCategory(interaction, categoria)
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor(0x5865f2)
-      .setTitle('📚 Menú de Ayuda - SOLOME Bot')
-      .setDescription('Selecciona una categoría para ver los comandos disponibles')
-      .addFields(
-        { name: '🎵 Música', value: 'Reproduce música de YouTube, Spotify y más', inline: true },
-        { name: '📻 Radio', value: 'Escucha estaciones de radio en vivo', inline: true },
-        { name: '🎮 Diversión', value: 'Juegos, entretenimiento y mini-juegos', inline: true },
-        { name: '🛡️ Moderación', value: 'Herramientas de moderación', inline: true },
-        { name: '🔧 Utilidad', value: 'Comandos útiles variados', inline: true },
-        { name: '⚙️ Administración', value: 'Configuración del servidor', inline: true },
-        { name: '🎮 Gamer', value: 'Perfiles gaming y LFG', inline: true },
-        { name: '⭐ Premium', value: 'Funciones premium exclusivas', inline: true }
-      )
-      .setFooter({ text: 'Usa /help categoria:NOMBRE para ver comandos específicos' })
-      .setTimestamp()
-
-    await interaction.reply({ embeds: [embed] })
-  }
-
-  async showCategory(interaction, cat) {
     const categories = {
-      MUSIC: {
-        name: '🎵 Música',
-        commands: '/play, /skip, /stop, /queue, /premium-music'
-      },
-      RADIO: {
-        name: '📻 Radio',
-        commands: '/radio, /radioinfo, /premium-radio'
-      },
-      FUN: {
-        name: '🎮 Diversión',
-        commands: '/duelo, /loteria, /ruleta, /slots, /entretenimiento'
-      },
-      MODERATION: {
-        name: '🛡️ Moderación',
-        commands: '/moderar, /ban, /kick, /clear, /warn'
-      },
-      UTILITY: {
-        name: '🔧 Utilidad',
-        commands: '/clima, /traducir, /recordatorio, /download, /noticias'
-      },
-      ADMIN: {
-        name: '⚙️ Administración',
-        commands: '/setup, /config, /announce'
-      },
-      GAMER: {
-        name: '🎮 Gamer',
-        commands: '/perfil-gamer, /alter-ego, /stream'
-      },
-      PREMIUM: {
-        name: '⭐ Premium',
-        commands: '/vip, /premium-music, /premium-radio'
-      }
+      MUSIC: { name: '🎵 Música', commands: ['play', 'skip', 'stop', 'queue', 'premium-music'] },
+      RADIO: { name: '📻 Radio', commands: ['radio', 'premium-radio'] },
+      FUN: { name: '🎮 Diversión', commands: ['duelo', 'loteria', 'ruleta', 'slots', 'entretenimiento'] },
+      GAMER: { name: '🎮 Gamer', commands: ['perfil-gamer', 'alter-ego'] },
+      UTILITY: { name: '🔧 Utilidad', commands: ['traducir', 'clima', 'recordatorio', 'download', 'noticias'] },
+      ECONOMY: { name: '💰 Economía', commands: ['balance', 'daily', 'work', 'tienda', 'mascota'] },
+      AI: { name: '🤖 IA', commands: ['ai', 'voice', 'moderar'] },
+      MODERATION: { name: '🛡️ Moderación', commands: ['moderar'] }
     }
 
-    const category = categories[cat]
-    if (!category) {
-      return interaction.reply({ content: '❌ Categoría no encontrada', ephemeral: true })
+    if (categoria) {
+      const cat = categories[categoria]
+      if (!cat) return interaction.reply({ content: '❌ Categoría inválida', ephemeral: true })
+
+      const embed = new EmbedBuilder()
+        .setColor(0x5865f2)
+        .setTitle(cat.name)
+        .setDescription(cat.commands.map(c => `\`/${c}\``).join(', '))
+        .setFooter({ text: 'Usa /help para ver todas las categorías' })
+
+      return interaction.reply({ embeds: [embed] })
     }
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle(category.name)
-      .setDescription(`**Comandos disponibles:**\n${category.commands}`)
-      .setFooter({ text: 'Usa /help para ver todas las categorías' })
+      .setTitle('📚 Ayuda - SOLOME Bot')
+      .setDescription('Selecciona una categoría para ver sus comandos')
+      .addFields(
+        Object.values(categories).map(cat => ({
+          name: cat.name,
+          value: `${cat.commands.length} comandos`,
+          inline: true
+        }))
+      )
+      .setFooter({ text: 'Usa /help categoria para ver comandos específicos' })
+      .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
   }
@@ -101,11 +68,11 @@ module.exports = class Help extends Command {
             { name: '🎵 Música', value: 'MUSIC' },
             { name: '📻 Radio', value: 'RADIO' },
             { name: '🎮 Diversión', value: 'FUN' },
-            { name: '🛡️ Moderación', value: 'MODERATION' },
-            { name: '🔧 Utilidad', value: 'UTILITY' },
-            { name: '⚙️ Administración', value: 'ADMIN' },
             { name: '🎮 Gamer', value: 'GAMER' },
-            { name: '⭐ Premium', value: 'PREMIUM' }
+            { name: '🔧 Utilidad', value: 'UTILITY' },
+            { name: '💰 Economía', value: 'ECONOMY' },
+            { name: '🤖 IA', value: 'AI' },
+            { name: '🛡️ Moderación', value: 'MODERATION' }
           ]
         }
       ]
