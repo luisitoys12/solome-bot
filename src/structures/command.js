@@ -1,8 +1,10 @@
+const { SlashCommandBuilder } = require('discord.js')
+
 module.exports = class Command {
   constructor (client, options = {}) {
     this.client = client
     this.name = options.name
-    this.description = options.description || 'Sin descripción' // ✅ AGREGADO
+    this.description = options.description || 'Sin descripción'
     this.aliases = options.aliases || []
     this.onlyDev = options.onlyDev || false
     this.category = options.category || 'general'
@@ -16,11 +18,13 @@ module.exports = class Command {
     return true
   }
 
-  // ✅ Método por defecto para comandos que no lo tengan
+  // ✅ Método que retorna SlashCommandBuilder CORRECTO para Discord
   getSlashCommandData() {
-    return {
-      name: this.name,
-      description: this.description
-    }
+    const builder = new SlashCommandBuilder()
+      .setName(this.name)
+      .setDescription(this.description)
+    
+    // Las subclases pueden sobrescribir este método para agregar opciones
+    return builder
   }
 }
