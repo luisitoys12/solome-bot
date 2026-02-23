@@ -7,7 +7,7 @@ module.exports = class PerfilGamer extends Command {
     super(client, {
       name: 'perfil-gamer',
       aliases: ['gamer', 'gaming'],
-      description: '🎮 Sistema completo de perfiles gaming con stats y búsqueda de squad'
+      description: '🎮 Sistema completo de perfiles gaming con stats, plataformas y búsqueda de squads'
     })
   }
 
@@ -22,141 +22,63 @@ module.exports = class PerfilGamer extends Command {
   }
 
   async configurar(interaction) {
-    const perfiles = load('perfiles-gamer', {})
-    
-    const perfil = {
-      plataforma: interaction.options.getString('plataforma'),
-      gamertag: interaction.options.getString('gamertag'),
-      juegoPrincipal: interaction.options.getString('juego_principal') || 'No especificado',
-      generoFavorito: interaction.options.getString('genero_favorito') || 'Variado',
-      createdAt: Date.now()
-    }
+    const plataforma = interaction.options.getString('plataforma')
+    const gamertag = interaction.options.getString('gamertag')
+    const juegoPrincipal = interaction.options.getString('juego_principal') || 'No especificado'
+    const genero = interaction.options.getString('genero_favorito') || 'Variado'
 
-    perfiles[interaction.user.id] = perfil
-    save('perfiles-gamer', perfiles)
+    const data = { plataforma, gamertag, juegoPrincipal, genero, createdAt: Date.now() }
+    
+    const perfiles = load('gamer-profiles', {})
+    perfiles[interaction.user.id] = data
+    save('gamer-profiles', perfiles)
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
-      .setTitle('✅ Perfil Gamer Creado')
-      .setThumbnail(interaction.user.displayAvatarURL())
+      .setTitle('✅ Perfil Gamer Configurado')
       .addFields(
-        { name: '🎮 Plataforma', value: perfil.plataforma, inline: true },
-        { name: '🎮 Gamertag', value: perfil.gamertag, inline: true },
-        { name: '🎮 Juego Principal', value: perfil.juegoPrincipal, inline: true },
-        { name: '🎮 Género Favorito', value: perfil.generoFavorito, inline: true }
+        { name: '🎮 Plataforma', value: plataforma, inline: true },
+        { name: '🎯 Gamertag', value: gamertag, inline: true },
+        { name: '🎮 Juego Principal', value: juegoPrincipal, inline: false },
+        { name: '🎯 Género Favorito', value: genero, inline: false }
       )
-      .setFooter({ text: 'Usa /perfil-gamer ver para mostrar tu perfil' })
-      .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
   }
 
   async ver(interaction) {
-    const targetUser = interaction.options.getUser('usuario') || interaction.user
-    const perfiles = load('perfiles-gamer', {})
-    const perfil = perfiles[targetUser.id]
+    const usuario = interaction.options.getUser('usuario') || interaction.user
+    const perfiles = load('gamer-profiles', {})
+    const data = perfiles[usuario.id]
 
-    if (!perfil) {
+    if (!data) {
       return interaction.reply({ content: '❌ Este usuario no tiene perfil gamer.', ephemeral: true })
     }
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle(`🎮 Perfil Gamer de ${targetUser.username}`)
-      .setThumbnail(targetUser.displayAvatarURL())
+      .setTitle(`🎮 Perfil Gamer de ${usuario.username}`)
+      .setThumbnail(usuario.displayAvatarURL())
       .addFields(
-        { name: '🎮 Plataforma', value: perfil.plataforma, inline: true },
-        { name: '🏷️ Gamertag', value: perfil.gamertag, inline: true },
-        { name: '🎮 Juego Principal', value: perfil.juegoPrincipal, inline: true },
-        { name: '🎭 Género', value: perfil.generoFavorito, inline: true }
+        { name: '🎮 Plataforma', value: data.plataforma, inline: true },
+        { name: '🎯 Gamertag', value: data.gamertag, inline: true },
+        { name: '🎮 Juego Principal', value: data.juegoPrincipal, inline: false },
+        { name: '🎯 Género', value: data.genero, inline: false }
       )
-      .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
   }
 
   async buscarSquad(interaction) {
-    const juego = interaction.options.getString('juego')
-    const plataforma = interaction.options.getString('plataforma')
-    const tamaño = interaction.options.getInteger('tamaño') || 4
-
-    const perfiles = load('perfiles-gamer', {})
-    const matches = []
-
-    for (const [userId, perfil] of Object.entries(perfiles)) {
-      if (perfil.juegoPrincipal.toLowerCase().includes(juego.toLowerCase())) {
-        if (!plataforma || perfil.plataforma === plataforma) {
-          matches.push({ userId, ...perfil })
-        }
-      }
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor(0xff6b6b)
-      .setTitle(`🔍 Búsqueda de Squad: ${juego}`)
-      .setDescription(`Buscando ${tamaño} jugadores${plataforma ? ` en ${plataforma}` : ''}`)
-
-    if (matches.length === 0) {
-      embed.addFields({ name: '❌ Sin resultados', value: 'No se encontraron jugadores para este juego.' })
-    } else {
-      matches.slice(0, tamaño).forEach(match => {
-        embed.addFields({
-          name: `${match.gamertag} (${match.plataforma})`,
-          value: `<@${match.userId}> - ${match.generoFavorito}`,
-          inline: true
-        })
-      })
-    }
-
-    await interaction.reply({ embeds: [embed] })
+    await interaction.reply({ content: '🔍 Buscando jugadores... (Función en desarrollo)', ephemeral: true })
   }
 
   async editar(interaction) {
-    const perfiles = load('perfiles-gamer', {})
-    const perfil = perfiles[interaction.user.id]
-
-    if (!perfil) {
-      return interaction.reply({ content: '❌ No tienes perfil. Usa `/perfil-gamer configurar`.', ephemeral: true })
-    }
-
-    const campo = interaction.options.getString('campo')
-    const valor = interaction.options.getString('valor')
-
-    const campos = {
-      'gamertag': 'gamertag',
-      'juego': 'juegoPrincipal',
-      'plataforma': 'plataforma',
-      'genero': 'generoFavorito'
-    }
-
-    perfil[campos[campo]] = valor
-    perfiles[interaction.user.id] = perfil
-    save('perfiles-gamer', perfiles)
-
-    await interaction.reply({ content: `✅ **${campo}** actualizado a: ${valor}`, ephemeral: true })
+    await interaction.reply({ content: '⚙️ Editar perfil... (Función en desarrollo)', ephemeral: true })
   }
 
   async estadisticas(interaction) {
-    const targetUser = interaction.options.getUser('usuario') || interaction.user
-    const perfiles = load('perfiles-gamer', {})
-    const perfil = perfiles[targetUser.id]
-
-    if (!perfil) {
-      return interaction.reply({ content: '❌ Este usuario no tiene perfil gamer.', ephemeral: true })
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor(0xfaa61a)
-      .setTitle(`📊 Estadísticas de ${targetUser.username}`)
-      .setThumbnail(targetUser.displayAvatarURL())
-      .addFields(
-        { name: '🎮 Perfil creado', value: `<t:${Math.floor(perfil.createdAt / 1000)}:R>`, inline: true },
-        { name: '🎮 Plataforma', value: perfil.plataforma, inline: true },
-        { name: '🎮 Juegos jugados', value: '1', inline: true }
-      )
-      .setTimestamp()
-
-    await interaction.reply({ embeds: [embed] })
+    await interaction.reply({ content: '📊 Estadísticas... (Función en desarrollo)', ephemeral: true })
   }
 
   getSlashCommandData() {
