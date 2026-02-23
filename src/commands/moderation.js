@@ -1,3 +1,17 @@
+// ===== ARCHIVO DE MODERACIÓN - EXPORTA MÚLTIPLES COMANDOS =====
+// Este archivo NO se carga como comando individual
+// Los comandos de moderación están en archivos separados:
+// - kick.js
+// - ban.js  
+// - timeout.js
+// - clear.js
+// - warn.js
+// - lock.js
+// - unlock.js
+
+// Este archivo se mantiene solo como referencia
+// o para importar desde otros lugares si es necesario
+
 const Command = require('../structures/command.js')
 const { EmbedBuilder, PermissionFlagsBits } = require('discord.js')
 const ms = require('ms')
@@ -5,8 +19,8 @@ const ms = require('ms')
 class Kick extends Command {
   constructor (client) {
     super(client, {
-      name: 'kick',
-      description: 'Expulsa a un usuario del servidor'
+      name: 'kick-legacy',
+      description: 'Expulsa a un usuario del servidor (legacy)'
     })
   }
 
@@ -51,8 +65,8 @@ class Kick extends Command {
 class Ban extends Command {
   constructor (client) {
     super(client, {
-      name: 'ban',
-      description: 'Banea a un usuario del servidor'
+      name: 'ban-legacy',
+      description: 'Banea a un usuario del servidor (legacy)'
     })
   }
 
@@ -93,8 +107,8 @@ class Ban extends Command {
 class Timeout extends Command {
   constructor (client) {
     super(client, {
-      name: 'timeout',
-      description: 'Silencia temporalmente a un usuario'
+      name: 'timeout-legacy',
+      description: 'Silencia temporalmente a un usuario (legacy)'
     })
   }
 
@@ -146,8 +160,8 @@ class Timeout extends Command {
 class Clear extends Command {
   constructor (client) {
     super(client, {
-      name: 'clear',
-      description: 'Elimina mensajes del canal'
+      name: 'clear-legacy',
+      description: 'Elimina mensajes del canal (legacy)'
     })
   }
 
@@ -173,4 +187,19 @@ class Clear extends Command {
   }
 }
 
-module.exports = { Kick, Ban, Timeout, Clear }
+// Exportar como objeto vacío para que no se cargue como comando
+// Los comandos reales están en archivos individuales
+module.exports = class ModerationDummy extends Command {
+  constructor(client) {
+    super(client, {
+      name: 'moderation-dummy',
+      description: 'Archivo de utilidad - no es un comando'
+    })
+    // Este comando no se usará
+  }
+  
+  getSlashCommandData() {
+    // Retornar null para que no se registre
+    return null
+  }
+}
