@@ -43,6 +43,8 @@ async function autoRegisterCommands() {
   
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
   
+  client.log('info', `🔄 Registrando comandos slash...`)
+  
   for (const file of commandFiles) {
     try {
       const filePath = path.join(commandsPath, file)
@@ -53,20 +55,30 @@ async function autoRegisterCommands() {
         const commandInstance = new CommandClass(client)
         
         if (typeof commandInstance.getSlashCommandData === 'function') {
-          const commandData = commandInstance.getSlashCommandData()
+          const slashBuilder = commandInstance.getSlashCommandData()
           
-          if (commandData && commandData.name && commandData.description && commandData.description.length > 0) {
-            commands.push(commandData)
+          // Verificar que sea un SlashCommandBuilder válido
+          if (slashBuilder && typeof slashBuilder.toJSON === 'function') {
+            const commandData = slashBuilder.toJSON()
+            
+            if (commandData && commandData.name && commandData.description) {
+              commands.push(commandData)
+              client.log('debug', `  ✅ ${file.padEnd(25)} -> /${commandData.name}`)
+            }
+          } else if (slashBuilder && slashBuilder.name && slashBuilder.description) {
+            // Soporte para objetos simples (backward compatibility)
+            commands.push(slashBuilder)
+            client.log('debug', `  ⚠️  ${file.padEnd(25)} -> /${slashBuilder.name} (objeto simple)`)
           }
         }
       }
     } catch (error) {
-      // Ignorar errores silenciosamente
+      client.log('warn', `  ❌ ${file}: ${error.message}`)
     }
   }
   
   if (commands.length === 0) {
-    client.log('warn', 'No se encontraron comandos válidos')
+    client.log('warn', 'No se encontraron comandos válidos para registrar')
     return
   }
   
@@ -81,16 +93,19 @@ async function autoRegisterCommands() {
     
     const rest = new REST({ version: '10' }).setToken(token)
     
-    client.log('info', `🔄 Auto-registrando ${commands.length} comandos...`)
+    client.log('info', `📤 Subiendo ${commands.length} comandos a Discord...`)
     
-    await rest.put(
+    const data = await rest.put(
       Routes.applicationCommands(clientId),
       { body: commands }
     )
     
-    client.log('info', `✅ ${commands.length} comandos registrados automáticamente`)
+    client.log('info', `✅ ${data.length} comandos registrados en Discord!`)
   } catch (error) {
     client.log('error', 'Error en auto-registro:', error.message)
+    if (error.rawError?.errors) {
+      console.error('Detalles:', JSON.stringify(error.rawError.errors, null, 2))
+    }
   }
 }
 
@@ -107,7 +122,7 @@ if (fs.existsSync(commandsPath)) {
       if (typeof CommandClass === 'function') {
         const command = new CommandClass(client)
         
-        if (command.name) {
+        if (command.name && typeof command.runSlash === 'function') {
           client.slashCommands.set(command.name, command)
           
           if (command.aliases && Array.isArray(command.aliases)) {
@@ -118,7 +133,7 @@ if (fs.existsSync(commandsPath)) {
         }
       }
     } catch (error) {
-      // Ignorar
+      // Ignorar errores silenciosamente
     }
   }
   
@@ -149,7 +164,7 @@ if (fs.existsSync(eventsPath)) {
 }
 
 // Evento: Bot listo
-client.once('clientReady', async () => {
+client.once('ready', async () => {
   client.log('info', `🚀 Bot conectado como ${client.user.tag}`)
   client.log('info', `🏠 En ${client.guilds.cache.size} servidores`)
   client.log('info', `👥 Viendo ${client.users.cache.size} usuarios`)
@@ -170,7 +185,7 @@ client.once('clientReady', async () => {
   
   // Establecer estado
   client.user.setPresence({
-    activities: [{ name: '/help | BabaRadio', type: 2 }],
+    activities: [{ name: '/help | EstacionKusTV', type: 2 }],
     status: 'online'
   })
 })
