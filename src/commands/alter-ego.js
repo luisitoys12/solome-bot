@@ -1,5 +1,5 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder } = require('discord.js')
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js')
 const { load, save } = require('../utils/database.js')
 
 function getAlterEgo(userId) {
@@ -35,7 +35,10 @@ module.exports = class AlterEgo extends Command {
   async crear(interaction) {
     const existing = getAlterEgo(interaction.user.id)
     if (existing) {
-      return interaction.reply({ content: '❌ Ya tienes un alter-ego. Usa `/alter-ego editar` para modificarlo.', ephemeral: true })
+      return interaction.reply({ 
+        content: '❌ Ya tienes un alter-ego. Usa `/alter-ego editar` para modificarlo.', 
+        flags: 64 // Ephemeral flag
+      })
     }
 
     const nombre = interaction.options.getString('nombre')
@@ -71,7 +74,10 @@ module.exports = class AlterEgo extends Command {
     const data = getAlterEgo(targetUser.id)
 
     if (!data) {
-      return interaction.reply({ content: '❌ Este usuario no tiene alter-ego.', ephemeral: true })
+      return interaction.reply({ 
+        content: '❌ Este usuario no tiene alter-ego.', 
+        flags: 64 // Ephemeral
+      })
     }
 
     const embed = new EmbedBuilder()
@@ -94,7 +100,10 @@ module.exports = class AlterEgo extends Command {
   async editar(interaction) {
     const data = getAlterEgo(interaction.user.id)
     if (!data) {
-      return interaction.reply({ content: '❌ No tienes un alter-ego. Usa `/alter-ego crear`.', ephemeral: true })
+      return interaction.reply({ 
+        content: '❌ No tienes un alter-ego. Usa `/alter-ego crear`.', 
+        flags: 64 
+      })
     }
 
     const campo = interaction.options.getString('campo')
@@ -103,118 +112,139 @@ module.exports = class AlterEgo extends Command {
     data[campo] = valor
     saveAlterEgo(interaction.user.id, data)
 
-    await interaction.reply({ content: `✅ **${campo}** actualizado a: ${valor}`, ephemeral: true })
+    await interaction.reply({ 
+      content: `✅ **${campo}** actualizado a: ${valor}`, 
+      flags: 64 
+    })
   }
 
   async eliminar(interaction) {
     const data = getAlterEgo(interaction.user.id)
     if (!data) {
-      return interaction.reply({ content: '❌ No tienes un alter-ego.', ephemeral: true })
+      return interaction.reply({ 
+        content: '❌ No tienes un alter-ego.', 
+        flags: 64 
+      })
     }
 
     const alterEgos = load('alter-egos', {})
     delete alterEgos[interaction.user.id]
     save('alter-egos', alterEgos)
 
-    await interaction.reply({ content: '✅ Tu alter-ego ha sido eliminado.', ephemeral: true })
+    await interaction.reply({ 
+      content: '✅ Tu alter-ego ha sido eliminado.', 
+      flags: 64 
+    })
   }
 
   async galeria(interaction) {
-    const alterEgos = load('alter-egos', {})
-    const guildMembers = await interaction.guild.members.fetch()
-    const guildAlterEgos = []
+    // ✅ Defer para evitar timeout
+    await interaction.deferReply()
+    
+    try {
+      const alterEgos = load('alter-egos', {})
+      
+      // ✅ NO hacer guild.members.fetch() - causa rate limit
+      // Solo mostrar alter-egos sin verificar si están en el servidor
+      const allAlterEgos = Object.entries(alterEgos).map(([userId, data]) => ({
+        userId,
+        ...data
+      }))
 
-    for (const [userId, data] of Object.entries(alterEgos)) {
-      if (guildMembers.has(userId)) {
-        guildAlterEgos.push({ userId, ...data })
+      if (allAlterEgos.length === 0) {
+        return interaction.editReply({ 
+          content: '❌ No hay alter-egos registrados aún.'
+        })
       }
+
+      const embed = new EmbedBuilder()
+        .setColor(0x673ab7)
+        .setTitle('🎭 Galería de Alter-Egos')
+        .setDescription(`${allAlterEgos.length} alter-egos registrados`)
+        .setFooter({ text: 'Crea el tuyo con /alter-ego crear' })
+
+      // Mostrar primeros 10
+      allAlterEgos.slice(0, 10).forEach(ae => {
+        embed.addFields({ 
+          name: `🐾 ${ae.nombre}`, 
+          value: `<@${ae.userId}> - ${ae.tipo} (${ae.especie})`,
+          inline: false
+        })
+      })
+
+      if (allAlterEgos.length > 10) {
+        embed.setFooter({ text: `Mostrando 10 de ${allAlterEgos.length} alter-egos` })
+      }
+
+      await interaction.editReply({ embeds: [embed] })
+    } catch (error) {
+      this.client.log('error', 'Error en galeria:', error)
+      await interaction.editReply({ 
+        content: '❌ Error al cargar la galería.' 
+      }).catch(() => {})
     }
-
-    if (guildAlterEgos.length === 0) {
-      return interaction.reply({ content: '❌ No hay alter-egos en este servidor.', ephemeral: true })
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor(0x673ab7)
-      .setTitle('🎭 Galería de Alter-Egos')
-      .setDescription(`${guildAlterEgos.length} alter-egos en este servidor`)
-
-    guildAlterEgos.slice(0, 10).forEach(ae => {
-      embed.addFields({ name: `🐾 ${ae.nombre}`, value: `<@${ae.userId}> - ${ae.tipo} (${ae.especie})` })
-    })
-
-    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {
-    return {
-      name: this.name,
-      description: this.description,
-      options: [
-        {
-          type: 1,
-          name: 'crear',
-          description: 'Crea tu alter-ego, therian o fursona',
-          options: [
-            { type: 3, name: 'nombre', description: 'Nombre de tu alter-ego', required: true },
-            {
-              type: 3,
-              name: 'tipo',
-              description: 'Tipo de alter-ego',
-              required: true,
-              choices: [
+    return new SlashCommandBuilder()
+      .setName(this.name)
+      .setDescription(this.description)
+      .addSubcommand(sub =>
+        sub
+          .setName('crear')
+          .setDescription('Crea tu alter-ego, therian o fursona')
+          .addStringOption(opt => opt.setName('nombre').setDescription('Nombre de tu alter-ego').setRequired(true))
+          .addStringOption(opt =>
+            opt
+              .setName('tipo')
+              .setDescription('Tipo de alter-ego')
+              .setRequired(true)
+              .addChoices(
                 { name: 'Therian', value: 'therian' },
                 { name: 'Fursona', value: 'fursona' },
                 { name: 'Kintype', value: 'kintype' },
                 { name: 'Original Character', value: 'oc' }
-              ]
-            },
-            { type: 3, name: 'especie', description: 'Especie (lobo, dragón, etc.)', required: true },
-            { type: 3, name: 'descripcion', description: 'Descripción física', required: true },
-            { type: 3, name: 'personalidad', description: 'Rasgos de personalidad', required: false },
-            { type: 3, name: 'imagen', description: 'URL de imagen de referencia', required: false }
-          ]
-        },
-        {
-          type: 1,
-          name: 'editar',
-          description: 'Edita tu alter-ego existente',
-          options: [
-            {
-              type: 3,
-              name: 'campo',
-              description: 'Campo a editar',
-              required: true,
-              choices: [
+              )
+          )
+          .addStringOption(opt => opt.setName('especie').setDescription('Especie (lobo, dragón, etc.)').setRequired(true))
+          .addStringOption(opt => opt.setName('descripcion').setDescription('Descripción física').setRequired(true))
+          .addStringOption(opt => opt.setName('personalidad').setDescription('Rasgos de personalidad').setRequired(false))
+          .addStringOption(opt => opt.setName('imagen').setDescription('URL de imagen de referencia').setRequired(false))
+      )
+      .addSubcommand(sub =>
+        sub
+          .setName('editar')
+          .setDescription('Edita tu alter-ego existente')
+          .addStringOption(opt =>
+            opt
+              .setName('campo')
+              .setDescription('Campo a editar')
+              .setRequired(true)
+              .addChoices(
                 { name: 'Nombre', value: 'nombre' },
                 { name: 'Especie', value: 'especie' },
                 { name: 'Descripción', value: 'descripcion' },
                 { name: 'Personalidad', value: 'personalidad' },
                 { name: 'Imagen', value: 'imagen' }
-              ]
-            },
-            { type: 3, name: 'valor', description: 'Nuevo valor', required: true }
-          ]
-        },
-        {
-          type: 1,
-          name: 'ver',
-          description: 'Ver alter-ego de alguien',
-          options: [
-            { type: 6, name: 'usuario', description: 'Usuario a consultar (opcional)', required: false }
-          ]
-        },
-        {
-          type: 1,
-          name: 'eliminar',
-          description: 'Elimina tu alter-ego permanentemente'
-        },
-        {
-          type: 1,
-          name: 'galeria',
-          description: 'Muestra la galería de alter-egos del servidor'
-        }
-      ]
-    }
+              )
+          )
+          .addStringOption(opt => opt.setName('valor').setDescription('Nuevo valor').setRequired(true))
+      )
+      .addSubcommand(sub =>
+        sub
+          .setName('ver')
+          .setDescription('Ver alter-ego de alguien')
+          .addUserOption(opt => opt.setName('usuario').setDescription('Usuario a consultar (opcional)').setRequired(false))
+      )
+      .addSubcommand(sub =>
+        sub
+          .setName('eliminar')
+          .setDescription('Elimina tu alter-ego permanentemente')
+      )
+      .addSubcommand(sub =>
+        sub
+          .setName('galeria')
+          .setDescription('Muestra la galería de alter-egos')
+      )
   }
 }

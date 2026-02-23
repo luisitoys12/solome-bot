@@ -1,5 +1,5 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder } = require('discord.js')
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js')
 const { load } = require('../utils/database.js')
 
 module.exports = class Balance extends Command {
@@ -12,27 +12,40 @@ module.exports = class Balance extends Command {
   }
 
   async runSlash (interaction) {
+    // ✅ Responder inmediatamente
     const targetUser = interaction.options.getUser('usuario') || interaction.user
-    const economy = load('economy', {})
-    const balance = economy[targetUser.id] || 0
+    
+    try {
+      const economy = load('economy', {})
+      const balance = economy[targetUser.id] || 0
 
-    const embed = new EmbedBuilder()
-      .setColor(0xffd700)
-      .setTitle('💰 Balance')
-      .setDescription(`**${targetUser.username}** tiene **${balance}** monedas`)
-      .setThumbnail(targetUser.displayAvatarURL())
-      .setTimestamp()
+      const embed = new EmbedBuilder()
+        .setColor(0xffd700)
+        .setTitle('💰 Balance')
+        .setDescription(`**${targetUser.username}** tiene **${balance.toLocaleString()}** monedas`)
+        .setThumbnail(targetUser.displayAvatarURL())
+        .setFooter({ text: 'Usa /daily para ganar monedas diarias' })
+        .setTimestamp()
 
-    await interaction.reply({ embeds: [embed] })
+      await interaction.reply({ embeds: [embed] })
+    } catch (error) {
+      this.client.log('error', 'Error en balance:', error)
+      await interaction.reply({ 
+        content: '❌ Error al obtener el balance. Inténtalo de nuevo.', 
+        ephemeral: true 
+      }).catch(() => {})
+    }
   }
 
   getSlashCommandData() {
-    return {
-      name: this.name,
-      description: this.description,
-      options: [
-        { type: 6, name: 'usuario', description: 'Usuario a consultar (opcional)', required: false }
-      ]
-    }
+    return new SlashCommandBuilder()
+      .setName(this.name)
+      .setDescription(this.description)
+      .addUserOption(option =>
+        option
+          .setName('usuario')
+          .setDescription('Usuario a consultar (opcional)')
+          .setRequired(false)
+      )
   }
 }
