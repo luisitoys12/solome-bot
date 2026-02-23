@@ -1,9 +1,15 @@
-// interactionCreate event with 404 handling
+// interactionCreate event with complete interaction handling
 const { handle404Error, handleCommandError } = require('../handlers/errorHandler.js')
+const ButtonHandler = require('../handlers/buttonHandler.js')
 
 module.exports = {
   name: 'interactionCreate',
   async execute (interaction, client) {
+    // Initialize button handler if not exists
+    if (!client.buttonHandler) {
+      client.buttonHandler = new ButtonHandler(client)
+    }
+
     // Handle slash commands
     if (interaction.isChatInputCommand()) {
       const commandName = interaction.commandName
@@ -40,18 +46,71 @@ module.exports = {
       }
     }
 
-    // Handle buttons
+    // Handle buttons - NOW FULLY OPERATIONAL
     if (interaction.isButton()) {
-      // Handle button interactions
-      const buttonId = interaction.customId
-      client.log('debug', `Button clicked: ${buttonId}`)
+      try {
+        await client.buttonHandler.handle(interaction)
+        client.log('debug', `Button handled: ${interaction.customId} by ${interaction.user.tag}`)
+      } catch (error) {
+        client.log('error', `Button error (${interaction.customId}):`, error)
+        
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ Error al procesar el botón',
+            flags: 64
+          }).catch(() => {})
+        }
+      }
     }
 
     // Handle select menus
     if (interaction.isStringSelectMenu()) {
-      // Handle select menu interactions
-      const menuId = interaction.customId
-      client.log('debug', `Menu selected: ${menuId}`)
+      try {
+        const menuId = interaction.customId
+        client.log('debug', `Menu selected: ${menuId} by ${interaction.user.tag}`)
+        
+        // Handle menu based on ID
+        if (menuId.startsWith('help_')) {
+          const command = client.slashCommands.get('help')
+          if (command && command.handleMenu) {
+            await command.handleMenu(interaction)
+          }
+        }
+      } catch (error) {
+        client.log('error', 'Select menu error:', error)
+        
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ Error al procesar el menú',
+            flags: 64
+          }).catch(() => {})
+        }
+      }
+    }
+
+    // Handle modals
+    if (interaction.isModalSubmit()) {
+      try {
+        const modalId = interaction.customId
+        client.log('debug', `Modal submitted: ${modalId} by ${interaction.user.tag}`)
+        
+        // Handle based on modal ID
+        if (modalId.startsWith('ticket_')) {
+          const command = client.slashCommands.get('ticket')
+          if (command && command.handleModal) {
+            await command.handleModal(interaction)
+          }
+        }
+      } catch (error) {
+        client.log('error', 'Modal error:', error)
+        
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ Error al procesar el formulario',
+            flags: 64
+          }).catch(() => {})
+        }
+      }
     }
   }
 }
