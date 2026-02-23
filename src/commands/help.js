@@ -1,5 +1,5 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js')
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js')
 
 module.exports = class Help extends Command {
   constructor (client) {
@@ -11,71 +11,155 @@ module.exports = class Help extends Command {
   }
 
   async runSlash (interaction) {
-    const categoria = interaction.options.getString('categoria')
-
-    const categories = {
-      MUSIC: { name: '🎵 Música', commands: ['play', 'skip', 'stop', 'queue', 'premium-music'] },
-      RADIO: { name: '📻 Radio', commands: ['radio', 'premium-radio'] },
-      FUN: { name: '🎮 Diversión', commands: ['duelo', 'loteria', 'ruleta', 'slots', 'entretenimiento'] },
-      GAMER: { name: '🎮 Gamer', commands: ['perfil-gamer', 'alter-ego'] },
-      UTILITY: { name: '🔧 Utilidad', commands: ['traducir', 'clima', 'recordatorio', 'download', 'noticias'] },
-      ECONOMY: { name: '💰 Economía', commands: ['balance', 'daily', 'work', 'tienda', 'mascota'] },
-      AI: { name: '🤖 IA', commands: ['ai', 'voice', 'moderar'] },
-      MODERATION: { name: '🛡️ Moderación', commands: ['moderar'] }
-    }
-
-    if (categoria) {
-      const cat = categories[categoria]
-      if (!cat) return interaction.reply({ content: '❌ Categoría inválida', ephemeral: true })
-
-      const embed = new EmbedBuilder()
-        .setColor(0x5865f2)
-        .setTitle(cat.name)
-        .setDescription(cat.commands.map(c => `\`/${c}\``).join(', '))
-        .setFooter({ text: 'Usa /help para ver todas las categorías' })
-
-      return interaction.reply({ embeds: [embed] })
-    }
-
+    const categories = this.getCategories()
+    
     const embed = new EmbedBuilder()
-      .setColor(0x5865f2)
-      .setTitle('📚 Ayuda - SOLOME Bot')
-      .setDescription('Selecciona una categoría para ver sus comandos')
-      .addFields(
-        Object.values(categories).map(cat => ({
-          name: cat.name,
-          value: `${cat.commands.length} comandos`,
-          inline: true
+      .setColor(0x5865F2)
+      .setTitle('🤖 SOLOME Bot - Comandos')
+      .setDescription(
+        '**Bot multifuncional para BabaRadio y EstacionKusTV**\n\n' +
+        'Selecciona una categoría para ver sus comandos.'
+      )
+      .setThumbnail(this.client.user.displayAvatarURL())
+    
+    // Agregar resumen por categoría
+    Object.entries(categories).forEach(([name, cmds]) => {
+      const icon = this.getCategoryIcon(name)
+      embed.addFields({
+        name: `${icon} ${name}`,
+        value: `${cmds.length} comandos`,
+        inline: true
+      })
+    })
+    
+    embed.setFooter({ 
+      text: `Total: ${this.client.slashCommands.size} comandos • Usa el menú para explorar` 
+    })
+    
+    // Select menu
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId('help_menu')
+      .setPlaceholder('📝 Selecciona una categoría')
+      .addOptions(
+        Object.keys(categories).map(cat => ({
+          label: cat,
+          value: `help_${cat.toLowerCase()}`,
+          description: `Ver comandos de ${cat}`,
+          emoji: this.getCategoryIcon(cat)
         }))
       )
-      .setFooter({ text: 'Usa /help categoria para ver comandos específicos' })
-      .setTimestamp()
+    
+    const row = new ActionRowBuilder().addComponents(menu)
+    
+    // Botones de enlaces
+    const linkRow = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setLabel('Invitar Bot')
+          .setURL(`https://discord.com/api/oauth2/authorize?client_id=${this.client.user.id}&permissions=8&scope=bot%20applications.commands`)
+          .setStyle(ButtonStyle.Link),
+        new ButtonBuilder()
+          .setLabel('Servidor de Soporte')
+          .setURL('https://discord.gg/tu_servidor')
+          .setStyle(ButtonStyle.Link),
+        new ButtonBuilder()
+          .setLabel('GitHub')
+          .setURL('https://github.com/luisitoys12/solome-bot')
+          .setStyle(ButtonStyle.Link)
+      )
+    
+    await interaction.reply({ 
+      embeds: [embed], 
+      components: [row, linkRow]
+    })
+  }
 
-    await interaction.reply({ embeds: [embed] })
+  async handleMenu(interaction) {
+    const category = interaction.values[0].replace('help_', '')
+    const categories = this.getCategories()
+    
+    const commands = categories[category.charAt(0).toUpperCase() + category.slice(1)] || []
+    
+    const embed = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle(`${this.getCategoryIcon(category)} ${category.charAt(0).toUpperCase() + category.slice(1)}`)
+      .setDescription(`Lista de comandos de ${category}`)
+    
+    commands.forEach(cmd => {
+      embed.addFields({
+        name: `/${cmd.name}`,
+        value: cmd.description || 'Sin descripción',
+        inline: false
+      })
+    })
+    
+    embed.setFooter({ text: `${commands.length} comandos en esta categoría` })
+    
+    await interaction.update({ embeds: [embed] })
+  }
+
+  getCategories() {
+    const categories = {
+      'Música': [],
+      'Radio': [],
+      'Moderación': [],
+      'Diversión': [],
+      'Utilidad': [],
+      'Economía': [],
+      'Configuración': [],
+      'Otros': []
+    }
+    
+    this.client.slashCommands.forEach(cmd => {
+      const name = cmd.name.toLowerCase()
+      
+      if (['music', 'play', 'skip', 'stop', 'queue', 'lyrics'].includes(name)) {
+        categories['Música'].push(cmd)
+      } else if (['radio', 'radioinfo', 'stream'].includes(name)) {
+        categories['Radio'].push(cmd)
+      } else if (['ban', 'kick', 'warn', 'timeout', 'clear', 'lock', 'unlock', 'slowmode', 'moderar', 'moderation'].includes(name)) {
+        categories['Moderación'].push(cmd)
+      } else if (['8ball', 'meme', 'coinflip', 'dice', 'tictactoe', 'connect4', 'duelo', 'slots', 'ruleta', 'loteria'].includes(name)) {
+        categories['Diversión'].push(cmd)
+      } else if (['avatar', 'userinfo', 'serverinfo', 'botinfo', 'ping', 'uptime', 'clima', 'traducir', 'wikipedia', 'download'].includes(name)) {
+        categories['Utilidad'].push(cmd)
+      } else if (['balance', 'daily', 'work', 'tienda', 'transfer'].includes(name)) {
+        categories['Economía'].push(cmd)
+      } else if (['ai', 'noticias', 'ticket', 'customcommand', 'premium'].includes(name)) {
+        categories['Configuración'].push(cmd)
+      } else {
+        categories['Otros'].push(cmd)
+      }
+    })
+    
+    // Remover categorías vacías
+    Object.keys(categories).forEach(key => {
+      if (categories[key].length === 0) {
+        delete categories[key]
+      }
+    })
+    
+    return categories
+  }
+
+  getCategoryIcon(category) {
+    const icons = {
+      'música': '🎵',
+      'radio': '📻',
+      'moderación': '🛡️',
+      'diversión': '🎮',
+      'utilidad': '🛠️',
+      'economía': '💰',
+      'configuración': '⚙️',
+      'otros': '📚'
+    }
+    return icons[category.toLowerCase()] || '📝'
   }
 
   getSlashCommandData() {
     return {
       name: this.name,
-      description: this.description,
-      options: [
-        {
-          type: 3,
-          name: 'categoria',
-          description: 'Selecciona una categoría específica',
-          required: false,
-          choices: [
-            { name: '🎵 Música', value: 'MUSIC' },
-            { name: '📻 Radio', value: 'RADIO' },
-            { name: '🎮 Diversión', value: 'FUN' },
-            { name: '🎮 Gamer', value: 'GAMER' },
-            { name: '🔧 Utilidad', value: 'UTILITY' },
-            { name: '💰 Economía', value: 'ECONOMY' },
-            { name: '🤖 IA', value: 'AI' },
-            { name: '🛡️ Moderación', value: 'MODERATION' }
-          ]
-        }
-      ]
+      description: this.description
     }
   }
 }
