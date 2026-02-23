@@ -7,57 +7,46 @@ module.exports = class Ruleta extends Command {
     super(client, {
       name: 'ruleta',
       aliases: ['roulette'],
-      description: '🎰 Juega a la ruleta y apuesta por rojo, negro o verde'
+      description: '🎰 Juega a la ruleta y apuesta tus monedas'
     })
   }
 
   async runSlash (interaction) {
+    const economy = load('economy', {})
+    const userId = interaction.user.id
     const apuesta = interaction.options.getInteger('apuesta')
     const color = interaction.options.getString('color')
 
-    const economy = load('economy', {})
-    const userData = economy[interaction.user.id] || { balance: 0 }
-
-    if (userData.balance < apuesta) {
-      return interaction.reply({ content: '❌ No tienes suficiente dinero!', ephemeral: true })
+    if (!economy[userId] || economy[userId] < apuesta) {
+      return interaction.reply({ content: '❌ No tienes suficientes monedas', ephemeral: true })
     }
 
-    const numero = Math.floor(Math.random() * 37)
-    let resultado
-    
-    if (numero === 0) {
-      resultado = 'verde'
-    } else if (numero % 2 === 0) {
-      resultado = 'rojo'
-    } else {
-      resultado = 'negro'
+    const numeros = {
+      rojo: [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36],
+      negro: [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35],
+      verde: [0]
     }
 
-    let ganancia = 0
-    
-    if (color === resultado) {
-      if (color === 'verde') {
-        ganancia = apuesta * 35
-      } else {
-        ganancia = apuesta * 2
-      }
-    } else {
-      ganancia = -apuesta
-    }
+    const resultado = Math.floor(Math.random() * 37)
+    let colorGanador = 'verde'
+    if (numeros.rojo.includes(resultado)) colorGanador = 'rojo'
+    if (numeros.negro.includes(resultado)) colorGanador = 'negro'
 
-    userData.balance += ganancia
-    economy[interaction.user.id] = userData
+    const multiplicadores = { rojo: 2, negro: 2, verde: 35 }
+    const gano = color === colorGanador
+    const ganancia = gano ? apuesta * multiplicadores[color] : -apuesta
+
+    economy[userId] += ganancia
     save('economy', economy)
 
-    const colorEmoji = { rojo: '🔴', negro: '⚫', verde: '🟢' }
-
     const embed = new EmbedBuilder()
-      .setColor(ganancia > 0 ? 0x00ff00 : 0xff0000)
+      .setColor(gano ? 0x00ff00 : 0xff0000)
       .setTitle('🎰 Ruleta')
-      .addFields(
-        { name: 'Número', value: `${numero} ${colorEmoji[resultado]}`, inline: true },
-        { name: 'Resultado', value: ganancia > 0 ? '✅ ¡Ganaste!' : '❌ Perdiste', inline: true },
-        { name: 'Balance', value: `$${userData.balance}`, inline: false }
+      .setDescription(
+        `Número: **${resultado}** (${colorGanador})\n` +
+        `Apostaste: **${apuesta}** a ${color}\n\n` +
+        (gano ? `✅ ¡Ganaste **${ganancia}** monedas!` : `❌ Perdiste **${apuesta}** monedas`) +
+        `\n\nBalance: **${economy[userId]}** monedas`
       )
 
     await interaction.reply({ embeds: [embed] })
@@ -68,14 +57,7 @@ module.exports = class Ruleta extends Command {
       name: this.name,
       description: this.description,
       options: [
-        {
-          type: 4,
-          name: 'apuesta',
-          description: 'Cantidad a apostar',
-          required: true,
-          min_value: 10,
-          max_value: 10000
-        },
+        { type: 4, name: 'apuesta', description: 'Cantidad a apostar', required: true, min_value: 10, max_value: 10000 },
         {
           type: 3,
           name: 'color',

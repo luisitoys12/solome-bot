@@ -6,49 +6,51 @@ module.exports = class Work extends Command {
   constructor (client) {
     super(client, {
       name: 'work',
-      aliases: ['trabajar'],
-      description: '💼 Trabaja y gana dinero virtual (cooldown: 1 hora)'
+      aliases: ['trabajar', 'currar'],
+      description: '💼 Trabaja para ganar monedas'
     })
   }
 
   async runSlash (interaction) {
     const economy = load('economy', {})
-    const userData = economy[interaction.user.id] || { balance: 0, lastWork: 0 }
-
-    const cooldown = 3600000 // 1 hora
+    const workCooldowns = load('work-cooldowns', {})
+    
+    const userId = interaction.user.id
     const now = Date.now()
-
-    if (now - userData.lastWork < cooldown) {
-      const tiempoRestante = Math.ceil((cooldown - (now - userData.lastWork)) / 60000)
+    const cooldownTime = 60 * 60 * 1000 // 1 hora
+    
+    if (workCooldowns[userId] && now - workCooldowns[userId] < cooldownTime) {
+      const timeLeft = cooldownTime - (now - workCooldowns[userId])
+      const minutes = Math.floor(timeLeft / (60 * 1000))
+      
       return interaction.reply({ 
-        content: `⏰ Debes esperar ${tiempoRestante} minutos para trabajar de nuevo.`,
+        content: `⏰ Ya trabajaste recientemente. Vuelve en ${minutes} minutos`,
         ephemeral: true 
       })
     }
 
     const trabajos = [
-      { nombre: 'Programador', paga: [100, 300] },
-      { nombre: 'Diseñador', paga: [80, 250] },
-      { nombre: 'Streamer', paga: [50, 400] },
-      { nombre: 'Editor de video', paga: [120, 280] }
+      { nombre: 'Programador', min: 200, max: 500 },
+      { nombre: 'Streamer', min: 150, max: 400 },
+      { nombre: 'DJ', min: 100, max: 300 },
+      { nombre: 'Community Manager', min: 80, max: 250 }
     ]
 
     const trabajo = trabajos[Math.floor(Math.random() * trabajos.length)]
-    const ganancia = Math.floor(Math.random() * (trabajo.paga[1] - trabajo.paga[0] + 1)) + trabajo.paga[0]
-
-    userData.balance += ganancia
-    userData.lastWork = now
-    economy[interaction.user.id] = userData
+    const ganancia = Math.floor(Math.random() * (trabajo.max - trabajo.min + 1)) + trabajo.min
+    
+    economy[userId] = (economy[userId] || 0) + ganancia
+    workCooldowns[userId] = now
+    
     save('economy', economy)
+    save('work-cooldowns', workCooldowns)
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
       .setTitle('💼 Trabajo Completado')
-      .setDescription(`Trabajaste como **${trabajo.nombre}**`)
-      .addFields(
-        { name: '💰 Ganancia', value: `+$${ganancia}`, inline: true },
-        { name: '💵 Balance', value: `$${userData.balance}`, inline: true }
-      )
+      .setDescription(`Trabajaste como **${trabajo.nombre}** y ganaste **${ganancia}** monedas!\n\nBalance actual: **${economy[userId]}** monedas`)
+      .setFooter({ text: 'Vuelve en 1 hora' })
+      .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })
   }

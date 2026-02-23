@@ -1,5 +1,4 @@
 const Command = require('../structures/command.js')
-const { EmbedBuilder } = require('discord.js')
 
 module.exports = class Stop extends Command {
   constructor (client) {
@@ -12,17 +11,10 @@ module.exports = class Stop extends Command {
 
   async runSlash (interaction) {
     if (!interaction.member.voice.channel) {
-      return interaction.reply({ content: '❌ Debes estar en un canal de voz.', ephemeral: true })
+      return interaction.reply({ content: '❌ Debes estar en un canal de voz', ephemeral: true })
     }
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff0000)
-      .setTitle('⏹️ Reproducción Detenida')
-      .setDescription('Bot desconectado del canal de voz.')
-      .setFooter({ text: 'Usa /play para reproducir nuevamente' })
-      .setTimestamp()
-
-    await interaction.reply({ embeds: [embed] })
+    await interaction.reply('⏹️ Reproducción detenida')
   }
 
   getSlashCommandData() {

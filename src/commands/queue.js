@@ -5,7 +5,7 @@ module.exports = class Queue extends Command {
   constructor (client) {
     super(client, {
       name: 'queue',
-      aliases: ['q', 'cola'],
+      aliases: ['q', 'cola', 'lista'],
       description: '📜 Muestra la cola de reproducción actual'
     })
   }
@@ -14,12 +14,7 @@ module.exports = class Queue extends Command {
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
       .setTitle('📜 Cola de Reproducción')
-      .setDescription('No hay canciones en la cola.')
-      .addFields(
-        { name: '🎵 Total', value: '0 canciones', inline: true },
-        { name: '⏱️ Duración', value: '0:00', inline: true }
-      )
-      .setFooter({ text: 'Usa /play para agregar canciones' })
+      .setDescription('La cola está vacía')
       .setTimestamp()
 
     await interaction.reply({ embeds: [embed] })

@@ -5,8 +5,8 @@ module.exports = class Sugerencia extends Command {
   constructor (client) {
     super(client, {
       name: 'sugerencia',
-      aliases: ['suggest'],
-      description: '💡 Envía sugerencias para mejorar el servidor'
+      aliases: ['suggest', 'suggestion'],
+      description: '💡 Envía una sugerencia para mejorar el servidor'
     })
   }
 
@@ -14,20 +14,21 @@ module.exports = class Sugerencia extends Command {
     const sugerencia = interaction.options.getString('sugerencia')
 
     const embed = new EmbedBuilder()
-      .setColor(0x5865f2)
+      .setColor(0xffff00)
       .setTitle('💡 Nueva Sugerencia')
       .setDescription(sugerencia)
-      .setAuthor({ 
-        name: interaction.user.tag,
-        iconURL: interaction.user.displayAvatarURL()
-      })
+      .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL() })
       .setTimestamp()
 
-    await interaction.reply({ embeds: [embed] })
+    await interaction.reply({ content: '✅ Sugerencia enviada', ephemeral: true })
     
-    const msg = await interaction.fetchReply()
-    await msg.react('✅')
-    await msg.react('❌')
+    // Enviar a canal de sugerencias si existe
+    const channel = interaction.guild.channels.cache.find(ch => ch.name === 'sugerencias')
+    if (channel) {
+      const msg = await channel.send({ embeds: [embed] })
+      await msg.react('✅')
+      await msg.react('❌')
+    }
   }
 
   getSlashCommandData() {
@@ -35,12 +36,7 @@ module.exports = class Sugerencia extends Command {
       name: this.name,
       description: this.description,
       options: [
-        {
-          type: 3,
-          name: 'sugerencia',
-          description: 'Tu sugerencia para mejorar el servidor',
-          required: true
-        }
+        { type: 3, name: 'sugerencia', description: 'Tu sugerencia para mejorar el servidor', required: true }
       ]
     }
   }

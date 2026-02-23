@@ -6,7 +6,7 @@ module.exports = class Sorteo extends Command {
     super(client, {
       name: 'sorteo',
       aliases: ['giveaway'],
-      description: '🎁 Crea sorteos instantáneos con reacciones'
+      description: '🎉 Crea un sorteo en el servidor'
     })
   }
 
@@ -15,14 +15,17 @@ module.exports = class Sorteo extends Command {
     const ganadores = interaction.options.getInteger('ganadores') || 1
 
     const embed = new EmbedBuilder()
-      .setColor(0xff69b4)
-      .setTitle('🎉 ¡SORTEO!')
-      .setDescription(`**Premio:** ${premio}\n**Ganadores:** ${ganadores}\n\nReacciona con 🎉 para participar!`)
-      .setFooter({ text: `Organizado por ${interaction.user.tag}` })
+      .setColor(0xff00ff)
+      .setTitle('🎉 Sorteo')
+      .setDescription(
+        `**Premio:** ${premio}\n` +
+        `**Ganadores:** ${ganadores}\n\n` +
+        `Reacciona con 🎉 para participar!`
+      )
+      .setFooter({ text: 'Sistema de sorteos próximamente' })
       .setTimestamp()
 
-    const msg = await interaction.reply({ embeds: [embed], fetchReply: true })
-    await msg.react('🎉')
+    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {
@@ -30,20 +33,8 @@ module.exports = class Sorteo extends Command {
       name: this.name,
       description: this.description,
       options: [
-        {
-          type: 3,
-          name: 'premio',
-          description: 'Premio del sorteo',
-          required: true
-        },
-        {
-          type: 4,
-          name: 'ganadores',
-          description: 'Número de ganadores',
-          required: false,
-          min_value: 1,
-          max_value: 20
-        }
+        { type: 3, name: 'premio', description: 'Premio del sorteo', required: true },
+        { type: 4, name: 'ganadores', description: 'Número de ganadores', required: false, min_value: 1, max_value: 20 }
       ]
     }
   }

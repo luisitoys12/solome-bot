@@ -5,20 +5,29 @@ module.exports = class VIP extends Command {
   constructor (client) {
     super(client, {
       name: 'vip',
-      aliases: [],
-      description: '👑 Sistema VIP - Solicita canciones, reclama recompensas y activa beneficios'
+      aliases: ['premium'],
+      description: '⭐ Accede a funciones VIP exclusivas del servidor'
     })
   }
 
   async runSlash (interaction) {
     const accion = interaction.options.getString('accion')
-    
+
+    const beneficios = [
+      '🎵 Solicitudes de canciones prioritarias',
+      '🏆 Roles y badges exclusivos',
+      '💰 Multiplicador de monedas x2',
+      '🎮 Acceso a comandos premium',
+      '🎁 Recompensas diarias mejoradas'
+    ]
+
     const embed = new EmbedBuilder()
       .setColor(0xffd700)
-      .setTitle('👑 Sistema VIP')
-      .setDescription(`Acción: ${accion}\n\nEsta función está en desarrollo.`)
+      .setTitle('⭐ Beneficios VIP')
+      .setDescription(beneficios.join('\n'))
+      .setFooter({ text: 'Sistema VIP próximamente' })
 
-    await interaction.reply({ embeds: [embed], ephemeral: true })
+    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {

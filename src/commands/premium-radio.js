@@ -6,23 +6,19 @@ module.exports = class PremiumRadio extends Command {
     super(client, {
       name: 'premium-radio',
       aliases: ['pradio'],
-      description: '📻 Radio premium con estaciones exclusivas y sin anuncios'
+      description: '📻 Acceso a estaciones de radio premium y exclusivas'
     })
   }
 
   async runSlash (interaction) {
     const busqueda = interaction.options.getString('busqueda')
-    
-    const premium = false
-    
-    if (!premium) {
-      return interaction.reply({ 
-        content: '❌ Esta función requiere **Premium**.',
-        ephemeral: true 
-      })
-    }
 
-    await interaction.reply({ content: `📻 Buscando: ${busqueda} (En desarrollo)`, ephemeral: true })
+    const embed = new EmbedBuilder()
+      .setColor(0xffd700)
+      .setTitle('📻 Radio Premium')
+      .setDescription(`Buscando estaciones premium: **${busqueda}**\n\nSistema premium próximamente`)
+
+    await interaction.reply({ embeds: [embed] })
   }
 
   getSlashCommandData() {
@@ -30,12 +26,7 @@ module.exports = class PremiumRadio extends Command {
       name: this.name,
       description: this.description,
       options: [
-        {
-          type: 3,
-          name: 'busqueda',
-          description: 'Buscar en estaciones premium',
-          required: true
-        }
+        { type: 3, name: 'busqueda', description: 'Buscar en estaciones premium', required: true }
       ]
     }
   }

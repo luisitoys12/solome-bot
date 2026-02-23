@@ -6,8 +6,8 @@ module.exports = class Traducir extends Command {
   constructor (client) {
     super(client, {
       name: 'traducir',
-      aliases: ['translate'],
-      description: '🌍 Traduce texto a múltiples idiomas usando Google Translate'
+      aliases: ['translate', 'tr'],
+      description: '🌎 Traduce texto entre múltiples idiomas'
     })
   }
 
@@ -15,28 +15,33 @@ module.exports = class Traducir extends Command {
     await interaction.deferReply()
     
     const texto = interaction.options.getString('texto')
-    const idioma = interaction.options.getString('idioma') || 'es'
+    const idioma = interaction.options.getString('idioma') || 'en'
 
     try {
-      // API de traducción libre (alternativa a Google)
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${idioma}&dt=t&q=${encodeURIComponent(texto)}`
-      
-      const response = await axios.get(url)
-      const traduccion = response.data[0][0][0]
+      // Usar API gratuita de traducción (MyMemory)
+      const response = await axios.get('https://api.mymemory.translated.net/get', {
+        params: {
+          q: texto,
+          langpair: `auto|${idioma}`
+        }
+      })
+
+      const traduccion = response.data.responseData.translatedText
 
       const embed = new EmbedBuilder()
-        .setColor(0x4285f4)
-        .setTitle('🌍 Traducción')
+        .setColor(0x5865f2)
+        .setTitle('🌎 Traducción')
         .addFields(
-          { name: '📝 Original', value: texto.substring(0, 1024), inline: false },
-          { name: '✅ Traducción', value: traduccion.substring(0, 1024), inline: false },
-          { name: '🌐 Idioma', value: idioma.toUpperCase(), inline: true }
+          { name: '📝 Original', value: texto.substring(0, 1024) },
+          { name: '💬 Traducido', value: traduccion.substring(0, 1024) }
         )
+        .setFooter({ text: `Idioma destino: ${idioma}` })
+        .setTimestamp()
 
       await interaction.editReply({ embeds: [embed] })
     } catch (error) {
       this.client.log('error', error)
-      await interaction.editReply('❌ Error al traducir. Intenta nuevamente.')
+      await interaction.editReply('❌ Error al traducir')
     }
   }
 
@@ -45,12 +50,7 @@ module.exports = class Traducir extends Command {
       name: this.name,
       description: this.description,
       options: [
-        {
-          type: 3,
-          name: 'texto',
-          description: 'Texto a traducir',
-          required: true
-        },
+        { type: 3, name: 'texto', description: 'Texto a traducir', required: true },
         {
           type: 3,
           name: 'idioma',
