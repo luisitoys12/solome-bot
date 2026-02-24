@@ -14,6 +14,9 @@ module.exports = class AFK extends Command {
   }
 
   async runSlash (interaction) {
+    // DEFER INMEDIATAMENTE para evitar timeout
+    await interaction.deferReply()
+    
     const razon = interaction.options.getString('razon') || 'AFK'
     
     afkUsers.set(interaction.user.id, {
@@ -26,7 +29,8 @@ module.exports = class AFK extends Command {
       .setDescription(`💤 **${interaction.user.username}** ahora está AFK: *${razon}*`)
       .setTimestamp()
     
-    await interaction.reply({ embeds: [embed] })
+    // Usar editReply en lugar de reply porque ya hicimos defer
+    await interaction.editReply({ embeds: [embed] })
   }
 
   getSlashCommandData() {
