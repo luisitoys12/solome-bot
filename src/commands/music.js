@@ -40,34 +40,40 @@ module.exports = class Music extends Command {
       return interaction.editReply('❌ Necesitas estar en un canal de voz')
     }
     
-    if (!this.client.lavalink) {
+    // Usar client.manager en lugar de client.lavalink
+    if (!this.client.manager) {
       return interaction.editReply(
         '❌ El sistema de música no está disponible.\n\n' +
         '🛠️ **Para administradores:**\n' +
-        'Configura Lavalink en el archivo .env y reinicia el bot.'
+        'Verifica que Lavalink esté corriendo en el servidor.'
       )
     }
     
+    // Verificar nodos conectados
+    const connectedNodes = [...this.client.manager.nodes.values()].filter(n => n.connected)
+    if (connectedNodes.length === 0) {
+      return interaction.editReply('❌ No hay nodos de Lavalink conectados. Intenta en unos segundos...')
+    }
+    
     try {
-      let player = this.client.lavalink.players.get(interaction.guild.id)
+      let player = this.client.manager.players.get(interaction.guild.id)
       
       if (!player) {
-        player = this.client.lavalink.create({
+        player = this.client.manager.create({
           guild: interaction.guild.id,
           voiceChannel: interaction.member.voice.channel.id,
           textChannel: interaction.channel.id,
           selfDeafen: true,
-          volume: 100
+          volume: 75
         })
       }
       
       if (player.state !== 'CONNECTED') player.connect()
       
-      // Buscar canción
       const res = await player.search(query, interaction.user)
       
-      if (!res || res.loadType === 'NO_MATCHES') {
-        return interaction.editReply('❌ No se encontraron resultados para tu búsqueda')
+      if (res.loadType === 'NO_MATCHES' || res.loadType === 'LOAD_FAILED') {
+        return interaction.editReply('❌ No se encontraron resultados')
       }
       
       if (res.loadType === 'PLAYLIST_LOADED') {
@@ -80,9 +86,9 @@ module.exports = class Music extends Command {
           .addFields(
             { name: '🎵 Canciones', value: `${res.tracks.length}`, inline: true },
             { name: '⏱️ Duración', value: this.formatDuration(res.tracks.reduce((a, b) => a + b.duration, 0)), inline: true },
-            { name: '📄 Cola', value: `${player.queue.size} canciones`, inline: true }
+            { name: '📜 Cola', value: `${player.queue.size}`, inline: true }
           )
-          .setFooter({ text: `Solicitado por ${interaction.user.tag}` })
+          .setFooter({ text: `Solicitado por ${interaction.user.tag} | Node: ${player.node.options.identifier}` })
           .setTimestamp()
         
         if (!player.playing && !player.paused) player.play()
@@ -93,41 +99,46 @@ module.exports = class Music extends Command {
       const track = res.tracks[0]
       player.queue.add(track)
       
+      const isPlaying = player.playing || player.paused
+      
       const embed = new EmbedBuilder()
-        .setColor(0xFF0000)
-        .setTitle(player.playing ? '🎵 Añadido a la cola' : '▶️ Reproduciendo ahora')
-        .setDescription(`**${track.title}**`)
+        .setColor(isPlaying ? 0x5865F2 : 0xFF0000)
+        .setTitle(isPlaying ? '🎵 Añadido a la Cola' : '▶️ Reproduciendo Ahora')
+        .setDescription(`**[${track.title}](${track.uri})**`)
         .addFields(
-          { name: '🎤 Artista', value: track.author, inline: true },
+          { name: '🎤 Artista', value: track.author || 'Desconocido', inline: true },
           { name: '⏱️ Duración', value: this.formatDuration(track.duration), inline: true },
-          { name: '📊 Posición', value: `#${player.queue.size}`, inline: true }
+          { name: '📊 Posición', value: isPlaying ? `#${player.queue.size}` : 'Reproduciendo', inline: true }
         )
-        .setThumbnail(track.displayThumbnail())
-        .setFooter({ text: `Solicitado por ${interaction.user.tag}` })
+        .setThumbnail(track.displayThumbnail('maxresdefault'))
+        .setFooter({ text: `Solicitado por ${interaction.user.tag} | Node: ${player.node.options.identifier}` })
         .setTimestamp()
       
-      if (!player.playing && !player.paused) player.play()
-      
-      // Botones de control
       const row = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('music_pause')
             .setEmoji('⏸️')
+            .setLabel('Pausar')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('music_skip')
             .setEmoji('⏭️')
-            .setStyle(ButtonStyle.Primary),
+            .setLabel('Saltar')
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId('music_stop')
             .setEmoji('⏹️')
+            .setLabel('Detener')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
             .setCustomId('music_queue')
             .setEmoji('📜')
+            .setLabel('Cola')
             .setStyle(ButtonStyle.Secondary)
         )
+      
+      if (!player.playing && !player.paused) player.play()
       
       await interaction.editReply({ embeds: [embed], components: [row] })
       
@@ -138,7 +149,7 @@ module.exports = class Music extends Command {
   }
 
   async pause(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
@@ -153,7 +164,7 @@ module.exports = class Music extends Command {
   }
 
   async resume(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
@@ -168,14 +179,10 @@ module.exports = class Music extends Command {
   }
 
   async skip(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
-    if (!player) {
+    if (!player || !player.queue.current) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
-    }
-    
-    if (!player.queue.current) {
-      return interaction.reply({ content: '❌ No hay canciones en la cola', flags: 64 })
     }
     
     const current = player.queue.current
@@ -185,7 +192,7 @@ module.exports = class Music extends Command {
   }
 
   async stop(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
@@ -196,13 +203,9 @@ module.exports = class Music extends Command {
   }
 
   async queue(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
-    if (!player) {
-      return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
-    }
-    
-    if (!player.queue.current && player.queue.size === 0) {
+    if (!player || (!player.queue.current && player.queue.size === 0)) {
       return interaction.reply({ content: '❌ La cola está vacía', flags: 64 })
     }
     
@@ -215,22 +218,22 @@ module.exports = class Music extends Command {
       .setDescription(
         `**Reproduciendo ahora:**\n` +
         `▶️ [${current.title}](${current.uri}) - \`${this.formatDuration(current.duration)}\`\n\n` +
-        (queue.length > 0 ? `**Próximas ${queue.length} canciones:**\n` + 
+        (queue.length > 0 ? `**Próximas ${queue.length}:**\n` + 
         queue.map((t, i) => `${i + 1}. [${t.title}](${t.uri}) - \`${this.formatDuration(t.duration)}\``).join('\n') : '')
       )
       .addFields(
-        { name: '📊 Total en cola', value: `${player.queue.size} canciones`, inline: true },
-        { name: '⏱️ Duración total', value: this.formatDuration(player.queue.duration), inline: true },
-        { name: '🔁 Loop', value: player.trackRepeat ? 'Canción' : player.queueRepeat ? 'Cola' : 'Desactivado', inline: true }
+        { name: '📋 Total', value: `${player.queue.size}`, inline: true },
+        { name: '⏱️ Duración', value: this.formatDuration(player.queue.duration), inline: true },
+        { name: '🔁 Loop', value: player.trackRepeat ? 'Canción' : player.queueRepeat ? 'Cola' : 'Off', inline: true }
       )
-      .setFooter({ text: 'Mostrando máximo 10 canciones' })
+      .setFooter({ text: 'Máximo 10 canciones' })
       .setTimestamp()
     
     await interaction.reply({ embeds: [embed] })
   }
 
   async nowplaying(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player || !player.queue.current) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
@@ -253,7 +256,7 @@ module.exports = class Music extends Command {
         { name: '🔊 Volumen', value: `${player.volume}%`, inline: true },
         { name: '📊 Progreso', value: `${bar}\n${this.formatDuration(position)} / ${this.formatDuration(duration)}` }
       )
-      .setThumbnail(current.displayThumbnail())
+      .setThumbnail(current.displayThumbnail('maxresdefault'))
       .setFooter({ text: `Solicitado por ${current.requester.tag}` })
       .setTimestamp()
     
@@ -261,7 +264,7 @@ module.exports = class Music extends Command {
   }
 
   async volume(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
@@ -278,7 +281,7 @@ module.exports = class Music extends Command {
   }
 
   async loop(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
@@ -302,14 +305,14 @@ module.exports = class Music extends Command {
   }
 
   async shuffle(interaction) {
-    const player = this.client.lavalink?.players.get(interaction.guild.id)
+    const player = this.client.manager?.players.get(interaction.guild.id)
     
     if (!player) {
       return interaction.reply({ content: '❌ No hay nada reproduciéndose', flags: 64 })
     }
     
     if (player.queue.size < 2) {
-      return interaction.reply({ content: '❌ Necesitas al menos 2 canciones en la cola', flags: 64 })
+      return interaction.reply({ content: '❌ Necesitas al menos 2 canciones', flags: 64 })
     }
     
     player.queue.shuffle()
@@ -317,6 +320,7 @@ module.exports = class Music extends Command {
   }
 
   formatDuration(ms) {
+    if (!ms || ms === 0) return '0:00'
     const seconds = Math.floor((ms / 1000) % 60)
     const minutes = Math.floor((ms / (1000 * 60)) % 60)
     const hours = Math.floor(ms / (1000 * 60 * 60))
@@ -338,24 +342,24 @@ module.exports = class Music extends Command {
           .addStringOption(opt =>
             opt
               .setName('cancion')
-              .setDescription('Nombre o URL de la canción')
+              .setDescription('Nombre o URL')
               .setRequired(true)
           )
       )
-      .addSubcommand(sub => sub.setName('pause').setDescription('Pausar la música'))
-      .addSubcommand(sub => sub.setName('resume').setDescription('Reanudar la música'))
-      .addSubcommand(sub => sub.setName('skip').setDescription('Saltar la canción actual'))
-      .addSubcommand(sub => sub.setName('stop').setDescription('Detener y limpiar la cola'))
-      .addSubcommand(sub => sub.setName('queue').setDescription('Ver la cola de reproducción'))
-      .addSubcommand(sub => sub.setName('nowplaying').setDescription('Ver la canción actual'))
+      .addSubcommand(sub => sub.setName('pause').setDescription('Pausar'))
+      .addSubcommand(sub => sub.setName('resume').setDescription('Reanudar'))
+      .addSubcommand(sub => sub.setName('skip').setDescription('Saltar'))
+      .addSubcommand(sub => sub.setName('stop').setDescription('Detener'))
+      .addSubcommand(sub => sub.setName('queue').setDescription('Ver cola'))
+      .addSubcommand(sub => sub.setName('nowplaying').setDescription('Canción actual'))
       .addSubcommand(sub =>
         sub
           .setName('volume')
-          .setDescription('Ajustar el volumen')
+          .setDescription('Ajustar volumen')
           .addIntegerOption(opt =>
             opt
               .setName('nivel')
-              .setDescription('Nivel de volumen (0-200)')
+              .setDescription('0-200')
               .setRequired(true)
               .setMinValue(0)
               .setMaxValue(200)
@@ -364,19 +368,19 @@ module.exports = class Music extends Command {
       .addSubcommand(sub =>
         sub
           .setName('loop')
-          .setDescription('Activar/desactivar loop')
+          .setDescription('Loop')
           .addStringOption(opt =>
             opt
               .setName('modo')
-              .setDescription('Modo de loop')
+              .setDescription('Modo')
               .setRequired(true)
               .addChoices(
-                { name: '❌ Desactivado', value: 'off' },
-                { name: '🔂 Canción actual', value: 'track' },
-                { name: '🔁 Toda la cola', value: 'queue' }
+                { name: '❌ Off', value: 'off' },
+                { name: '🔂 Canción', value: 'track' },
+                { name: '🔁 Cola', value: 'queue' }
               )
           )
       )
-      .addSubcommand(sub => sub.setName('shuffle').setDescription('Mezclar la cola'))
+      .addSubcommand(sub => sub.setName('shuffle').setDescription('Mezclar'))
   }
 }
