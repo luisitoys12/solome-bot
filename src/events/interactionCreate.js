@@ -1,6 +1,9 @@
-// interactionCreate event with complete interaction handling
+// interactionCreate event with AUTOMATIC DEFER to prevent timeout
 const { handle404Error, handleCommandError } = require('../handlers/errorHandler.js')
 const ButtonHandler = require('../handlers/buttonHandler.js')
+
+// Comandos que NO necesitan defer (respuestas instantáneas)
+const NO_DEFER_COMMANDS = ['ping', 'help']
 
 module.exports = {
   name: 'interactionCreate',
@@ -22,6 +25,12 @@ module.exports = {
       }
 
       try {
+        // ✅ DEFER AUTOMÁTICO para evitar "Unknown interaction"
+        // Solo NO defer para comandos instantáneos
+        if (!NO_DEFER_COMMANDS.includes(commandName)) {
+          await interaction.deferReply().catch(() => {})
+        }
+        
         // Execute command
         await command.runSlash(interaction)
         
@@ -46,7 +55,7 @@ module.exports = {
       }
     }
 
-    // Handle buttons - NOW FULLY OPERATIONAL
+    // Handle buttons
     if (interaction.isButton()) {
       try {
         await client.buttonHandler.handle(interaction)
