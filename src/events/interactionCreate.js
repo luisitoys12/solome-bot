@@ -1,9 +1,15 @@
-// interactionCreate event with AUTOMATIC DEFER to prevent timeout
+// interactionCreate event with SMART DEFER to prevent double-defer
 const { handle404Error, handleCommandError } = require('../handlers/errorHandler.js')
 const ButtonHandler = require('../handlers/buttonHandler.js')
 
-// Comandos que NO necesitan defer (respuestas instantáneas)
-const NO_DEFER_COMMANDS = ['ping', 'help']
+// Comandos que NO necesitan defer automático (ya lo hacen internamente o son instantáneos)
+const NO_AUTO_DEFER_COMMANDS = [
+  'ping',        // Instantáneo
+  'help',        // Instantáneo
+  'radio',       // Ya hace defer en play/custom
+  'play',        // Ya hace defer interno
+  'download'     // Ya hace defer interno
+]
 
 module.exports = {
   name: 'interactionCreate',
@@ -25,9 +31,8 @@ module.exports = {
       }
 
       try {
-        // ✅ DEFER AUTOMÁTICO para evitar "Unknown interaction"
-        // Solo NO defer para comandos instantáneos
-        if (!NO_DEFER_COMMANDS.includes(commandName)) {
+        // ✅ DEFER INTELIGENTE: Solo para comandos que no lo hacen internamente
+        if (!NO_AUTO_DEFER_COMMANDS.includes(commandName)) {
           await interaction.deferReply().catch(() => {})
         }
         
