@@ -1,0 +1,24 @@
+app = 'solome-bot'
+primary_region = 'ams'
+
+[build]
+
+[env]
+  NODE_ENV = 'production'
+
+[[vm]]
+  memory = '2gb'
+  cpu_kind = 'shared'
+  cpus = 4
+
+# Sin HTTP service ya que es un bot de Discord (no necesita web server)
+# Si usas dashboard web, descomenta lo siguiente:
+# [[services]]
+#   internal_port = 8080
+#   protocol = 'tcp'
+#   [[services.ports]]
+#     port = 80
+#     handlers = ['http']
+#   [[services.ports]]
+#     port = 443
+#     handlers = ['tls', 'http']
